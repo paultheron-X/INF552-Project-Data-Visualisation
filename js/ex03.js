@@ -149,6 +149,37 @@ var createDetectionMethodLinePlot = function(){
     // line plot: planet discovery count vs. year
     vlSpec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "width": 800,
+        "height": 500,
+        "projection": {
+             "type": "mercator",
+             "scale": 1000,
+             "center": [0,50],
+                    },
+        "layer": [
+         {
+            "data": {
+            "url": "data/carte_json/regions.geojson",
+            "format": {
+            "type": "topojson",
+            "feature": "feature"
+        }
+      },
+      "mark": {
+        "type": "geoshape",
+        "fill": "lightgray",
+        "stroke": "white"
+      }
+    },
+    ]
+  }
+  
+
+vlOpts = {width:300, height:300, actions:false};
+vegaEmbed("#discPlot", vlSpec, vlOpts);
+    
+    /*vlSpec = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "data": {
             "url": ctx.dataFile,
         },
@@ -202,7 +233,7 @@ var createDetectionMethodLinePlot = function(){
     ]
     };
     vlOpts = {width:300, height:300, actions:false};
-    vegaEmbed("#discPlot", vlSpec, vlOpts);
+    vegaEmbed("#discPlot", vlSpec, vlOpts);*/
 };
 
 var createViz = function(){
