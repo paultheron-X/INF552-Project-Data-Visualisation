@@ -1,1 +1,1 @@
-# INF552 Theron Paul - jérémie Dentan
+# INF552 Theron Paul - Jérémie Dentan
