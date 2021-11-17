@@ -42,8 +42,15 @@ svg {
         <div id="main">
             <div style="float:right">
                 <form>
-                    <input type="button" value="switch" onclick="togglePZMode();" id="toggleBt"/>
-                </form>
+                    <select id="data4map" name="data4map">
+                      <option value="population">Population</option>
+                      <option value="pib">PIB par habitant</option>
+                      <option value="esperance">Éspérance de vie</option>
+                      <option value="natalite">Taux de natalité</option>
+                      <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
+                    </select>
+                    <input type="button" value="Set" onclick="setMap();" id="setBt"/>
+                  </form>
             </div>
         </div>
 

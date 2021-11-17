@@ -41,7 +41,7 @@ with open("data/donnees_brutes/correspondanceDepRegion.csv", "r") as csv_file:
 
 
 with open('data/donnees_clean/correspondanceRegDep.csv', mode='w') as outfile:
-	writer = csv.writer(outfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	line_count = 0
 	for row in toWrite:
 		writer.writerow(row)
@@ -68,10 +68,10 @@ with open("data/donnees_brutes/populationBrute.csv", "r") as csv_file:
 	print(f'Processed {line_count} lines from data/donnees_brutes/populationBrute.csv')
 
 with open('data/donnees_clean/population.csv', mode='w') as outfile:
-	writer = csv.writer(outfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	line_count = 0
 	for row in toWrite:
-		writer.writerow(row)
+		writer.writerow(row[:-2])
 		line_count += 1
 	print(f'Wrote {line_count} lines in data/donnees_clean/population.csv')
 
@@ -85,7 +85,7 @@ with open("data/donnees_brutes/pibParHab.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg','Année'] + row[1:])
+			toWrite.append(['\ufeffCodeReg','Région'] + row[1:])
 			line_count += 1
 		else:
 			try :
@@ -97,7 +97,7 @@ with open("data/donnees_brutes/pibParHab.csv", "r") as csv_file:
 	print(f'Processed {line_count} lines from data/donnees_brutes/pibParHab.csv')
 
 with open('data/donnees_clean/pibParHab.csv', mode='w') as outfile:
-	writer = csv.writer(outfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	line_count = 0
 	for row in toWrite:
 		writer.writerow(row)
@@ -112,7 +112,7 @@ with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Libellé'] + row[1:])
+			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Accouchement'] + row[1:])
 			line_count += 1
 		else:
 			found = False
@@ -136,7 +136,7 @@ with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
 	print(f'Processed {line_count} lines from data/donnees_brutes/ageFemmeAccouchement.csv')
 
 with open('data/donnees_clean/ageFemmesAccouchement.csv', mode='w') as outfile:
-	writer = csv.writer(outfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	line_count = 0
 	for row in toWrite:
 		writer.writerow(row)
@@ -152,7 +152,7 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Libellé'] + row[1:])
+			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Esperance'] + row[1:])
 			line_count += 1
 		else:
 			found = False
@@ -176,7 +176,7 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 	print(f'Processed {line_count} lines from data/donnees_brutes/esperanceDeVie.csv')
 
 with open('data/donnees_clean/esperanceDeVie.csv', mode='w') as outfile:
-	writer = csv.writer(outfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	line_count = 0
 	for row in toWrite:
 		writer.writerow(row)
@@ -192,7 +192,7 @@ with open("data/donnees_brutes/tauxNatalite.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Libellé'] + row[1:])
+			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Natalité'] + row[1:])
 			line_count += 1
 		else:
 			found = False
@@ -216,7 +216,7 @@ with open("data/donnees_brutes/tauxNatalite.csv", "r") as csv_file:
 	print(f'Processed {line_count} lines from data/donnees_brutes/tauxNatalite.csv')
 
 with open('data/donnees_clean/tauxNatalite.csv', mode='w') as outfile:
-	writer = csv.writer(outfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	line_count = 0
 	for row in toWrite:
 		writer.writerow(row)
