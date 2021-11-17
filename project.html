@@ -2,73 +2,52 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>INF552 - 2021 - Projet INF</title>
-        <!-- https://vega.github.io/vega-lite/ -->
-        <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.1"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.18.2"></script>
+        <title>INF552 - 2021 - PC 06-1</title>
+        <!-- https://d3js.org/ -->
+        <script type="text/javascript" src="js/d3.v7.min.js"></script>
+        <script type="text/javascript" src="js/d3-geo-projection.v4.min.js"></script>
         <!-- Your code -->
-        <script src="js/ex03.js"></script>
-        <style>
-body {
-    font-family: sans-serif;
+        <script type="text/javascript" src="js/main.js"></script>
+<style type="text/css">
+.country {
+  fill: white;
+  stroke: #CCC;
+  vector-effect: non-scaling-stroke;
 }
 
-#gridLayout {
-    width:100%;
-    display:grid;
-    grid-template-columns: 7fr 3fr;
+.river {
+  fill: none;
+  stroke: #4e76b4;
+  vector-effect: non-scaling-stroke;
 }
 
-#masses {
-    grid-area: 1 / 1 / 3 / 2;
+.lake {
+  fill: #4e76b4;
+  stroke: none;
 }
 
-#discOverTime {
-    grid-area: 2 / 2 / 3 / 3;
-    border-left:2px solid #DDD;
-    border-top:2px solid #DDD;
-    text-align: center;
-    padding-bottom:1em;
+svg {
+    display: block;
 }
 
-#vmagByDetect {
-    grid-area: 1 / 2 / 2 / 3;
-    border-left:2px solid #DDD;
-    padding-top:1em;
-    text-align: center;
+.sphereBounds {
+    fill: #4e76b4;
+    stroke: #333;
+    stroke-width: 1px;
 }
-
-.formLb {
-    font-size:70%;
-}
-        </style>
+</style>
     </head>
 
-    <body onload="createViz();">
-        <div id="gridLayout">
-            <div id="masses">
-                <div>
-                    <form>
-                        <input type="text" name="sampleField" value="*" id="sampleTf"
-                       onkeydown="handleKeyEvent(event);"/>
-                       <input type="button" value="Sample" onclick="setSample();" id="sampleBt"/>
-                       <span class="formLb" style="padding-left:5em;">Scale:</span>
-                       <select id="scaleSelSP" onchange="setScaleSP();">
-                           <option value="linear" selected="selected">Linear</option>
-                           <option value="log">Log</option>
-                       </select>
-                    </form>
-                </div>
-                <div id="massScat"></div>
+    <body onload="createViz()">
+        <div id="main">
+            <div style="float:right">
+                <form>
+                    <input type="button" value="switch" onclick="togglePZMode();" id="toggleBt"/>
+                </form>
             </div>
-            <div id="vmagByDetect">
-                <div id="vmagHist"></div>
-            </div>
-            <div id="discOverTime">
-                <div id="discPlot"></div>
-            </div>
-      </div>
+        </div>
+
+    <div style="margin:5%"></div>
     </body>
 
 </html>

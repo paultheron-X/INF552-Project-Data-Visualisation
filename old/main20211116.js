@@ -159,7 +159,7 @@ var createDetectionMethodLinePlot = function(){
         "layer": [
          {
             "data": {
-            "url": "data/carte_json/regions.geojson",
+            "url": "data/carte_json/a-dep2021.geojson",
             "format": {
             "type": "topojson",
             "feature": "feature"
