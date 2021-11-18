@@ -153,6 +153,7 @@ var loadData = function(svgEl){
         console.log(data);
         ctx.departements = data[0];
         makeMap(svgEl);
+        setMap();
         
     }).catch(function(error){console.log(error)});
 
@@ -189,3 +190,5 @@ var setMap = function(){
             break;
     }
 }
+
+

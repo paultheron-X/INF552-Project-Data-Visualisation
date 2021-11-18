@@ -41,7 +41,7 @@ svg {
     <body onload="createViz()">
         <div id="main">
             <div style="float:right">
-                <form>
+                <form style="margin:10%">
                     <select id="data4map" name="data4map">
                       <option value="population">Population</option>
                       <option value="pib">PIB par habitant</option>
@@ -50,6 +50,16 @@ svg {
                       <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
                     </select>
                     <input type="button" value="Set" onclick="setMap();" id="setBt"/>
+                    
+                    <fieldset>
+                      <label for="rangeVal">Année</label>
+                      <input type ="range" max="1000" min="20"
+                          oninput="document.getElementById('rangeValLabel').innerHTML = this.value;"
+                          step="5" name="rangeVal" id="rangeVal" value="200">
+                      </input>
+                      <em id="rangeValLabel" style="font-style: normal;"></em>
+                  </fieldset>
+
                   </form>
             </div>
         </div>
