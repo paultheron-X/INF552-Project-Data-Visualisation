@@ -24,6 +24,13 @@ var animationMap = {
     len: 0,
 }
 
+var animationLegend = {
+    ongoing: false,
+    dates: [],
+    delays: [],
+    len: 0,
+}
+
 /* Utils */
 function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
@@ -156,7 +163,7 @@ var loadData = function(svgEl){
         makeMap(svgEl);
         setMapFromHtml(500);
         setYearMenu();
-        setMapLegend();
+        setMapLegendFromCtx();
         
     }).catch(function(error){console.log(error)});
 
@@ -215,13 +222,17 @@ var setYear = function(){
 
 var setYearFromValue = function(value, duration=500) {
     ctx.currentYear = value;
-    setMapLegend();
+    setMapLegendFromCtx();
     setMap(duration);
 }
 
-var setMapLegend = function(){
+var setMapLegendFromCtx = function(){
+    setMapLegendFromValue(ctx.currentYear);
+}
+
+var setMapLegendFromValue = function(value){
     d3.select("#currentYearMap")
-        .text("Year currently displayed on the map : " + ctx.currentYear);
+        .text("Year currently displayed on the map : " + value);
 }
 
 var animer = function(){
