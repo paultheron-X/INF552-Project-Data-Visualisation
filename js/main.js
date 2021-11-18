@@ -6,22 +6,23 @@ var ctx = {
     undefinedColor: "#AAA",
     YEAR: "2015",
     panZoomMode: true,
-    TRANSITION_DURATION: 3000,
+    animationDuration: 5000,
     departements: [],
     mapG: 0,
-    datePopulation: [],
-    minPop:Infinity,
-    maxPop: 0,
-    datePIB: [],
-    minPIB: Infinity,
-    maxPIB: 0,
-    minEsperance: Infinity,
-    maxEsperance: 0,
-    minNatalite: Infinity,
-    maxNatalite: 0,
-    minAccouchement: Infinity,
-    maxAccouchement: 0,
+    currentlyDisplayed: "population",
+    currentDates: [],
+    currentYear: 2021,
+    dateAvailable: {population: [], pib: [], esperance: [], natalite: [], accouchement: []},
+    min: {population: Infinity, pib: Infinity, esperance: Infinity, natalite: Infinity, accouchement: Infinity},
+    max: {population: 0, pib: 0, esperance: 0, natalite: 0, accouchement: 0},
 };
+
+var animationMap = {
+    ongoing: false,
+    dates: [],
+    delays: [],
+    len: 0,
+}
 
 /* Utils */
 function isNumeric(n) {
@@ -87,7 +88,7 @@ var loadData = function(svgEl){
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[1][0]).length;i++) {
             if (isNumeric(Object.keys(data[1][0])[i])){
-                ctx.datePopulation.push(Object.keys(data[1][0])[i]);
+                ctx.dateAvailable["population"].push(Object.keys(data[1][0])[i]);
             }
         }
 
@@ -98,12 +99,12 @@ var loadData = function(svgEl){
                 if (data[0]["features"][i]["properties"]["dep"] == data[1][j]["Codeinsee"] || (data[0]["features"][i]["properties"]["dep"][0] == '0' && data[0]["features"][i]["properties"]["dep"].substring(1) == data[1][j]["Codeinsee"])) {
                     data[0]["features"][i]["properties"]["population"] = data[1][j];
                     /*Max and min*/
-                    for (let k=0; k<ctx.datePopulation.length; k++){
-                        if (data[1][j][ctx.datePopulation[k]] < ctx.minPop){
-                            ctx.minPop = data[1][j][ctx.datePopulation[k]];
+                    for (let k=0; k<ctx.dateAvailable['population'].length; k++){
+                        if (data[1][j][ctx.dateAvailable['population'][k]] < ctx.min['population']){
+                            ctx.min['population'] = data[1][j][ctx.dateAvailable['population'][k]];
                         };
-                        if (data[1][j][ctx.datePopulation[k]] > ctx.maxPop){
-                            ctx.maxPop = data[1][j][ctx.datePopulation[k]];
+                        if (data[1][j][ctx.dateAvailable['population'][k]] > ctx.max['population']){
+                            ctx.max['population'] = data[1][j][ctx.dateAvailable['population'][k]];
                         }
                     };
                     found = true;
@@ -121,7 +122,7 @@ var loadData = function(svgEl){
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[2][0]).length;i++) {
             if (isNumeric(Object.keys(data[2][0])[i])){
-                ctx.datePIB.push(Object.keys(data[2][0])[i]);
+                ctx.dateAvailable['pib'].push(Object.keys(data[2][0])[i]);
             }
         }
 
@@ -132,12 +133,12 @@ var loadData = function(svgEl){
                 if (data[0]["features"][i]["properties"]["reg"] == data[2][j]["CodeReg"] || (data[0]["features"][i]["properties"]["reg"][0] == '0' && data[0]["features"][i]["properties"]["reg"].substring(1) == data[2][j]["CodeReg"])) {
                     data[0]["features"][i]["properties"]["pib"] = data[2][j];
                     /*Max and min*/
-                    for (let k=0; k<ctx.datePIB.length; k++){
-                        if (data[2][j][ctx.datePIB[k]] != 'n.d' && data[2][j][ctx.datePIB[k]] < ctx.minPIB){
-                            ctx.minPIB = data[2][j][ctx.datePIB[k]];
+                    for (let k=0; k<ctx.dateAvailable['pib'].length; k++){
+                        if (data[2][j][ctx.dateAvailable['pib'][k]] != 'n.d' && data[2][j][ctx.dateAvailable['pib'][k]] < ctx.min['pib']){
+                            ctx.min['pib'] = data[2][j][ctx.dateAvailable['pib'][k]];
                         };
-                        if (data[2][j][ctx.datePIB[k]] != 'n.d' && data[2][j][ctx.datePIB[k]] - ctx.maxPIB > 0){
-                            ctx.maxPIB = data[2][j][ctx.datePIB[k]];
+                        if (data[2][j][ctx.dateAvailable['pib'][k]] != 'n.d' && data[2][j][ctx.dateAvailable['pib'][k]] - ctx.max['pib'] > 0){
+                            ctx.max['pib'] = data[2][j][ctx.dateAvailable['pib'][k]];
                         }
                     };
                     found = true;
@@ -153,42 +154,127 @@ var loadData = function(svgEl){
         console.log(data);
         ctx.departements = data[0];
         makeMap(svgEl);
-        setMap();
+        setMapFromHtml(500);
+        setYearMenu();
+        setMapLegend();
         
     }).catch(function(error){console.log(error)});
 
 };
 
-var setMap = function(){
-    var data4map = document.querySelector('#data4map').value;
 
-    switch (data4map){
-        case "population":
-            var mycolor = d3.scaleLinear().domain([ctx.minPop,ctx.maxPop]).range(["white","#194D6F"]);
-            d3.selectAll(".dpt")
-                .transition()
-                .duration(2000)
-                .style("fill", function(d){
-                    if (d["properties"]["pib"]["2015"] == "n.d"){
-                        return "grey";
-                    }return mycolor(d["properties"]["population"]["2018"])
-                });
-            break;
-        
-        
-        case "pib":
-            var mycolor = d3.scaleLinear().domain([ctx.minPIB,ctx.maxPIB]).range(["white","#194D6F"]);
-            d3.selectAll(".dpt")
-                .transition()
-                .duration(2000)
-                .style("fill", function(d){
-                    if (d["properties"]["pib"]["2015"] == "n.d"){
-                        return "grey";
-                    }
-                    return mycolor(d["properties"]["pib"]["2015"]);
-                });
-            break;
-    }
+
+var setMapFromHtml = function(transitionDuration){
+    ctx.currentlyDisplayed = document.querySelector('#data4map').value;
+    ctx.currentYear = ctx.dateAvailable[ctx.currentlyDisplayed][ctx.dateAvailable[ctx.currentlyDisplayed].length - 1];
+    setMapFromCtx(transitionDuration);
+}
+
+var setMapFromCtx = function(transitionDuration){
+    var mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range(["white","#194D6F"]);
+    d3.selectAll(".dpt")
+        .transition("colorationMap")
+        .duration(transitionDuration)
+        .style("fill", function(d){
+            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d"){
+                return "grey";
+            }return mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+        });
+}
+
+var stopSetMap = function() {
+    var mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range(["white","#194D6F"]);
+    d3.selectAll(".dpt")
+        .interrupt("colorationMap")
+        .style("fill", function(d){
+            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d"){
+                return "grey";
+            }return mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+        });
 }
 
 
+
+var setYearMenu = function() {
+    d3.selectAll(".yearOption")
+        .remove();
+    
+    d3.select("#selectYear4map")
+        .selectAll("option")
+        .data(ctx.dateAvailable[ctx.currentlyDisplayed])
+        .enter()
+        .append('option')
+        .attr("value",(d) => d)
+        .text((d) => d);
+}
+
+var setYear = function(){
+    var select = document.getElementById('selectYear4map');
+    setYearFromValue(select.options[select.selectedIndex].value);
+}
+
+var setYearFromValue = function(value, duration=500) {
+    ctx.currentYear = value;
+    setMapLegend();
+    setMap(duration);
+}
+
+var setMapLegend = function(){
+    d3.select("#currentYearMap")
+        .text("Year currently displayed on the map : " + ctx.currentYear);
+}
+
+var animer = function(){
+    d3.select("#setAnimationBtn")
+        .attr("onclick", "stopAnimation();")
+        .attr("value","STOP !");
+    
+        /*Initialisation*/
+        ctx.currentYear = ctx.dateAvailable[ctx.currentlyDisplayed][0];
+        setMapFromCtx(0);
+
+        /*Configuration of the animationMap object*
+        It contains the dates to plot and the delay before each of them*/
+        var dates4animation = ctx.dateAvailable[ctx.currentlyDisplayed]
+        mDate = dates4animation.length
+        animationMap.dates = [];
+        animationMap.delays = [];
+        animationMap.len = mDate - 1;
+        animationMap.ongoing = true;
+
+        range = dates4animation[mDate - 1] - dates4animation[0];
+
+        for (let i=1; i<mDate; i++){
+            animationMap.dates.push(dates4animation[i]);
+            animationMap.delays.push(ctx.animationDuration*(dates4animation[i] - dates4animation[i-1])/range);
+        }
+
+        /*The animation*/
+        console.log(animationMap);
+        nextStepAnimationMap(0);
+} 
+
+var stopAnimation = function(){
+    d3.select("#setAnimationBtn")
+        .attr("onclick", "animer();")
+        .attr("value","Animer >");
+    console.log(ctx.currentYear);
+    animationMap.ongoing = false;
+    stopSetMap();
+}
+
+var nextStepAnimationMap = function(index){
+    setTimeout(function(){
+        if (animationMap.ongoing){
+            console.log("Entering");
+            ctx.currentYear = animationMap.dates[index];
+            setMapFromCtx(animationMap.delays[index]);
+            if (index != animationMap.len - 1){
+                nextStepAnimationMap(index + 1);
+            }
+            else{
+                animationMap.ongoing = false;
+            }
+        }
+    }, animationMap.delays[index])
+}

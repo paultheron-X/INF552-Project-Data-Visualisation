@@ -49,19 +49,18 @@ svg {
                       <option value="natalite">Taux de natalité</option>
                       <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
                     </select>
-                    <input type="button" value="Set" onclick="setMap(2000);" id="setDataBtn"/>
-
-                    <select name="years" id="selectYear4map">
-                      <option value="2021" class = "yearOption">YYYY</option>
-                    </select>
-                    <input type="button" value="Set" onclick="setYear();" id="setYearBtn"/>
-
-                     </br>
-                    </br>
-                     <input type="button" value="Animer >" onclick="animer();" id="setAnimationBtn"/>              
+                    <input type="button" value="Set" onclick="setMap();" id="setBt"/>
+                    
+                    <fieldset>
+                      <label for="rangeVal">Année</label>
+                      <input type ="range" max="1000" min="20"
+                          oninput="document.getElementById('rangeValLabel').innerHTML = this.value;"
+                          step="5" name="rangeVal" id="rangeVal" value="200">
+                      </input>
+                      <em id="rangeValLabel" style="font-style: normal;"></em>
+                  </fieldset>
 
                   </form>
-                  <p id="currentYearMap"></p>
             </div>
         </div>
 
