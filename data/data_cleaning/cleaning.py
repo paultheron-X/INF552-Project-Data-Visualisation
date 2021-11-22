@@ -156,6 +156,12 @@ with open("data/donnees_brutes/pibParHab.csv", "r") as csv_file:
 			toWrite.append(rowToWrite)
 			line_count += 1
 		else:
+			# Cleaning the row itself
+			for index, elt in enumerate(row):
+				if 'n.d' in elt:
+					row[index] = ''
+			
+			# Adding to 'toWrite'
 			try :
 				rowToWrite = [regData[clean(row[0])][1]] + row
 			except KeyError:
