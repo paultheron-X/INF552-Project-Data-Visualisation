@@ -3,7 +3,9 @@ import csv
 # The goal of this programm is to add metadata to all time series we have in here
 # Specifically, we want to add the code of the region and departement to all time series
 
-# Utils
+############################################################
+########################## Utils ###########################
+############################################################
 def clean(string):
 	"""returns a cleaner string for code:
 	06 =>6
@@ -17,7 +19,50 @@ def clean(string):
 		else :
 			return string.lower().replace(' ','').replace('-','')
 
-# Loading the names and codes of regions / departements
+def addValuesLinear(row, datesToAddPerIndex, mode='float'):
+	result = []
+	if "Guyane" in  row:
+		print(row)
+		print(datesToAddPerIndex)
+		print(mode)
+	for i, elt in enumerate(row):
+		if datesToAddPerIndex[i] > 0:
+			if row[i] != '' and row[i + 1] != '':
+				d1 = float(row[i])
+				d2 = float(row[i+1])
+				n = datesToAddPerIndex[i]
+				if mode == 'float':
+					toAdd = [d1 + k*(d2-d1)/(n + 1) for k in range(1,n + 1)]
+				elif mode =='int':
+					toAdd = [int(d1 + k*(d2-d1)/(n + 1)) for k in range(1,n + 1)]
+				else:
+					raise ValueError("addValuesLinear 'mode' can only be 'float' or 'int'.")
+			else:
+				toAdd = datesToAddPerIndex[i] * ['']
+		else:
+			toAdd = []
+		result = result + [elt] + toAdd
+	return result
+
+def generateDatesToAddPerIndex(row):
+	datesToAddPerIndex = []
+	for i,elt in enumerate(row):
+		try:
+			d1 = int(elt)
+			d2 = int(row[i+1])
+			datesToAddPerIndex.append(max(d2 - d1 - 1, 0))
+		except ValueError:
+			datesToAddPerIndex.append(0)
+		except IndexError:
+			datesToAddPerIndex.append(0)
+	return datesToAddPerIndex
+
+
+
+
+############################################################
+################# Loading names and codes ##################
+############################################################
 print(f"Working on data/donnees_brutes/correspondanceDepRegion.csv")
 depDataName = dict()
 depDataCode = dict()
@@ -48,7 +93,13 @@ with open('data/donnees_clean/correspondanceRegDep.csv', mode='w') as outfile:
 		line_count += 1
 	print(f'Wrote {line_count} lines in data/donnees_clean/correspondanceRegDep.csv')
 
-## Proceeding population
+
+
+
+############################################################
+####################### Population #########################
+############################################################
+
 print("\nWorking on data/donnees_brutes/populationBrute.csv")
 toWrite = []
 with open("data/donnees_brutes/populationBrute.csv", "r") as csv_file:
@@ -56,15 +107,23 @@ with open("data/donnees_brutes/populationBrute.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg','Codeinsee'] + row[1:])
+			rowToWrite = ['\ufeffCodeReg','Codeinsee'] + row[1:]
+			datesToAddPerIndex = generateDatesToAddPerIndex(rowToWrite)
+			rowToWrite = addValuesLinear(rowToWrite, datesToAddPerIndex, mode = 'int')
+
+			toWrite.append(rowToWrite)
 			line_count += 1
 		else:
 			try :
-				toWrite.append([depDataCode[clean(row[0])][2]] + row)
+				rowToWrite = [depDataCode[clean(row[0])][2]] + row
 			except KeyError:
 				print(f"KeyError({row[0]})")
-				toWrite.append(["##"] + row)
+				rowToWrite = ["##"] + row
+
+			rowToWrite = addValuesLinear(rowToWrite, datesToAddPerIndex, mode = 'float')
+			toWrite.append(rowToWrite)
 			line_count += 1
+
 	print(f'Processed {line_count} lines from data/donnees_brutes/populationBrute.csv')
 
 with open('data/donnees_clean/population.csv', mode='w') as outfile:
@@ -77,7 +136,12 @@ with open('data/donnees_clean/population.csv', mode='w') as outfile:
 
 
 
-## Processing PIB
+
+
+############################################################
+########################### PIB ############################
+############################################################
+
 print("\nWorking on data/donnees_brutes/pibParHab.csv")
 toWrite = []
 with open("data/donnees_brutes/pibParHab.csv", "r") as csv_file:
@@ -85,14 +149,22 @@ with open("data/donnees_brutes/pibParHab.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg','Région'] + row[1:])
+			rowToWrite = ['\ufeffCodeReg','Région'] + row[1:]
+			datesToAddPerIndex = generateDatesToAddPerIndex(rowToWrite)
+			rowToWrite = addValuesLinear(rowToWrite, datesToAddPerIndex, mode = 'int')
+
+			toWrite.append(rowToWrite)
 			line_count += 1
 		else:
 			try :
-				toWrite.append([regData[clean(row[0])][1]] + row)
+				rowToWrite = [regData[clean(row[0])][1]] + row
 			except KeyError:
-				print(f"KeyError({clean(row[0])})")
-				toWrite.append(["##"] + row)
+				print(f"KeyError({row[0]})")
+				rowToWrite = ["##"] + row
+
+			rowToWrite = addValuesLinear(rowToWrite, datesToAddPerIndex, mode = 'float')
+			toWrite.append(rowToWrite)
+			line_count += 1
 		line_count += 1
 	print(f'Processed {line_count} lines from data/donnees_brutes/pibParHab.csv')
 
@@ -104,7 +176,13 @@ with open('data/donnees_clean/pibParHab.csv', mode='w') as outfile:
 		line_count += 1
 	print(f'Wrote {line_count} lines in data/donnees_clean/pibParHab.csv')
 
-## Processing Âge de la femme à l'accouchement
+
+
+
+############################################################
+####################### Accouchement #######################
+############################################################
+
 print("\nWorking on data/donnees_brutes/ageFemmeAccouchement.csv")
 toWrite = []
 with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
@@ -112,7 +190,11 @@ with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
 	line_count = 0
 	for row in csv_reader:
 		if line_count == 0:
-			toWrite.append(['\ufeffCodeReg', 'CodeDep', 'Accouchement'] + row[1:])
+			rowToWrite = ['\ufeffCodeReg', 'CodeDep', 'Accouchement'] + row[1:]
+			datesToAddPerIndex = generateDatesToAddPerIndex(rowToWrite)
+			rowToWrite = addValuesLinear(rowToWrite, datesToAddPerIndex, mode = 'int')
+
+			toWrite.append(rowToWrite)
 			line_count += 1
 		else:
 			found = False
@@ -126,13 +208,16 @@ with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
 							row[index] = row[index][:-4].replace(',','.')
 					
 					# Saving 
-					toWrite.append([depDataName[key][1], depDataName[key][2]] + row)
+					rowToWrite = [depDataName[key][1], depDataName[key][2]] + row
 					found = True
 					break
 			if not found:
 				print(f"NotFound({clean(row[0])})")
-				toWrite.append(["##","##"] + row)
-		line_count += 1
+				rowToWrite = ["##","##"] + row
+
+			rowToWrite = addValuesLinear(rowToWrite, datesToAddPerIndex, mode = 'float')
+			toWrite.append(rowToWrite)
+			line_count += 1
 	print(f'Processed {line_count} lines from data/donnees_brutes/ageFemmeAccouchement.csv')
 
 with open('data/donnees_clean/ageFemmesAccouchement.csv', mode='w') as outfile:
@@ -144,7 +229,13 @@ with open('data/donnees_clean/ageFemmesAccouchement.csv', mode='w') as outfile:
 	print(f'Wrote {line_count} lines in data/donnees_clean/ageFemmeAccouchement.csv')
 
 
-## Processing Espérance de Vie
+
+
+
+############################################################
+#################### Esperance de vie ######################
+############################################################
+
 print("\nWorking on data/donnees_brutes/esperanceDeVie.csv")
 toWrite = []
 with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
@@ -184,7 +275,13 @@ with open('data/donnees_clean/esperanceDeVie.csv', mode='w') as outfile:
 	print(f'Wrote {line_count} lines in data/donnees_clean/esperanceDeVie.csv')
 
 
-## Processing Taux de natalité
+
+
+
+############################################################
+##################### Taux de natalité #####################
+############################################################
+
 print("\nWorking on data/donnees_brutes/tauxNatalite.csv")
 toWrite = []
 with open("data/donnees_brutes/tauxNatalite.csv", "r") as csv_file:

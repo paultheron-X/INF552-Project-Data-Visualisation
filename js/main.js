@@ -6,7 +6,7 @@ var ctx = {
     undefinedColor: "#AAA",
     YEAR: "2015",
     panZoomMode: true,
-    animationDuration: 5000,
+    animationDuration: 10000,
     departements: [],
     mapG: 0,
     currentlyDisplayed: "population",
@@ -223,7 +223,7 @@ var setYear = function(){
 var setYearFromValue = function(value, duration=500) {
     ctx.currentYear = value;
     setMapLegendFromCtx();
-    setMap(duration);
+    setMapFromCtx(duration);
 }
 
 var setMapLegendFromCtx = function(){
@@ -243,41 +243,51 @@ var animer = function(){
         /*Initialisation*/
         ctx.currentYear = ctx.dateAvailable[ctx.currentlyDisplayed][0];
         setMapFromCtx(0);
+        setMapLegendFromCtx();
 
         /*Configuration of the animationMap object*
         It contains the dates to plot and the delay before each of them*/
         var dates4animation = ctx.dateAvailable[ctx.currentlyDisplayed]
         mDate = dates4animation.length
-        animationMap.dates = [];
-        animationMap.delays = [];
-        animationMap.len = mDate - 1;
-        animationMap.ongoing = true;
-
         range = dates4animation[mDate - 1] - dates4animation[0];
+
+        animationMap.dates = []; animationLegend.dates = [];
+        animationMap.delays = []; animationLegend.delays = [];
+        animationMap.len = mDate - 1; animationLegend.len = range;
+        animationMap.ongoing = true; animationLegend.ongoing = true;
 
         for (let i=1; i<mDate; i++){
             animationMap.dates.push(dates4animation[i]);
             animationMap.delays.push(ctx.animationDuration*(dates4animation[i] - dates4animation[i-1])/range);
         }
 
+        for (let i=1;i<range+1; i++){
+            animationLegend.dates.push(parseInt(dates4animation[0]) + i);
+            animationLegend.delays.push(ctx.animationDuration/range);
+        }
+
         /*The animation*/
         console.log(animationMap);
+        console.log(animationLegend);
         nextStepAnimationMap(0);
+        nextStepAnimationLegend(0);
 } 
 
 var stopAnimation = function(){
     d3.select("#setAnimationBtn")
         .attr("onclick", "animer();")
         .attr("value","Animer >");
+    setMapLegendFromCtx();
     console.log(ctx.currentYear);
     animationMap.ongoing = false;
+    animationLegend.ongoing = false;
     stopSetMap();
 }
 
 var nextStepAnimationMap = function(index){
     setTimeout(function(){
         if (animationMap.ongoing){
-            console.log("Entering");
+            console.log("Entering Map Animation");
             ctx.currentYear = animationMap.dates[index];
             setMapFromCtx(animationMap.delays[index]);
             if (index != animationMap.len - 1){
@@ -289,3 +299,20 @@ var nextStepAnimationMap = function(index){
         }
     }, animationMap.delays[index])
 }
+
+var nextStepAnimationLegend = function(index){
+    setTimeout(function(){
+        if (animationLegend.ongoing){
+            console.log("Entering Legend Animation");
+            setMapLegendFromValue(animationLegend.dates[index]);
+            if (index != animationLegend.len - 1){
+                nextStepAnimationLegend(index + 1);
+            }
+            else{
+                animationLegend.ongoing = false;
+            }
+        }
+    }, animationLegend.delays[index])
+}
+
+
