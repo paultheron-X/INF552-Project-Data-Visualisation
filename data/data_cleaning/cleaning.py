@@ -21,10 +21,6 @@ def clean(string):
 
 def addValuesLinear(row, datesToAddPerIndex, mode='float'):
 	result = []
-	if "Guyane" in  row:
-		print(row)
-		print(datesToAddPerIndex)
-		print(mode)
 	for i, elt in enumerate(row):
 		if datesToAddPerIndex[i] > 0:
 			if row[i] != '' and row[i + 1] != '':
@@ -92,8 +88,6 @@ with open('data/donnees_clean/correspondanceRegDep.csv', mode='w') as outfile:
 		writer.writerow(row)
 		line_count += 1
 	print(f'Wrote {line_count} lines in data/donnees_clean/correspondanceRegDep.csv')
-
-
 
 
 ############################################################
@@ -204,17 +198,17 @@ with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
 			line_count += 1
 		else:
 			found = False
+			# Cleaning the row itself
+			for index, elt in enumerate(row):
+				if '(O)' in elt:
+					row[index] = ''
+				if '(A)' in elt or '(P)' in elt:
+					row[index] = row[index][:-4].replace(',','.')
+
 			for key in depDataName:
 				if key in clean(row[0]):
-					# Cleaning the row itself
-					for index, elt in enumerate(row):
-						if '(O)' in elt:
-							row[index] = ''
-						if '(A)' in elt or '(P)' in elt:
-							row[index] = row[index][:-4].replace(',','.')
-					
 					# Saving 
-					rowToWrite = [depDataName[key][1], depDataName[key][2]] + row
+					rowToWrite = [depDataName[key][2], depDataName[key][1]] + row
 					found = True
 					break
 			if not found:
@@ -242,6 +236,8 @@ with open('data/donnees_clean/ageFemmesAccouchement.csv', mode='w') as outfile:
 #################### Esperance de vie ######################
 ############################################################
 
+# Pas besoin de rajouter des dates !!!!
+
 print("\nWorking on data/donnees_brutes/esperanceDeVie.csv")
 toWrite = []
 with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
@@ -253,17 +249,17 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 			line_count += 1
 		else:
 			found = False
+			# Cleaning the row itself
+			for index, elt in enumerate(row):
+				if '(O)' in elt:
+					row[index] = ''
+				if '(A)' in elt or '(P)' in elt:
+					row[index] = row[index][:-4].replace(',','.')
+
 			for key in depDataName:
-				if key in clean(row[0]):
-					# Cleaning the row itself
-					for index, elt in enumerate(row):
-						if '(O)' in elt:
-							row[index] = ''
-						if '(A)' in elt or '(P)' in elt:
-							row[index] = row[index][:-4].replace(',','.')
-					
+				if key in clean(row[0]):	
 					# Saving 
-					toWrite.append([depDataName[key][1], depDataName[key][2]] + row)
+					toWrite.append([depDataName[key][2], depDataName[key][1]] + row)
 					found = True
 					break
 			if not found:
@@ -271,6 +267,34 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 				toWrite.append(["##","##"] + row)
 		line_count += 1
 	print(f'Processed {line_count} lines from data/donnees_brutes/esperanceDeVie.csv')
+
+# Dealing with the difference between males and females - we only want the mean
+newToWrite = [toWrite.copy()[0]]
+alreadyAdded = set()
+for row in toWrite[1:]:
+	if row[1] != '##' and not row[1] in alreadyAdded:
+		target = row[1]
+		mean = row.copy()[:6] + [0 for k in range(6, len(row))]
+		count = 0
+		for row2 in toWrite:
+			if row2[1] == target:
+				for k in range(6, len(mean)):
+					try:
+						mean[k] = float(row2[k]) + float(mean[k])
+					except ValueError:
+						mean[k] = row2[k]
+				count += 1
+		
+		for k in range(len(mean)):
+			try:
+				mean[k] = mean[k] / count
+			except TypeError:
+				pass
+		
+		alreadyAdded.add(target)
+		newToWrite.append(mean)
+
+toWrite = newToWrite.copy()
 
 with open('data/donnees_clean/esperanceDeVie.csv', mode='w') as outfile:
 	writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -288,6 +312,8 @@ with open('data/donnees_clean/esperanceDeVie.csv', mode='w') as outfile:
 ##################### Taux de natalité #####################
 ############################################################
 
+# Pas besoin de rajouter des dates !!!!
+
 print("\nWorking on data/donnees_brutes/tauxNatalite.csv")
 toWrite = []
 with open("data/donnees_brutes/tauxNatalite.csv", "r") as csv_file:
@@ -299,17 +325,17 @@ with open("data/donnees_brutes/tauxNatalite.csv", "r") as csv_file:
 			line_count += 1
 		else:
 			found = False
+			# Cleaning the row itself
+			for index, elt in enumerate(row):
+				if '(O)' in elt:
+					row[index] = ''
+				if '(A)' in elt or '(P)' in elt:
+					row[index] = row[index][:-4].replace(',','.')
+
 			for key in depDataName:
 				if key in clean(row[0]):
-					# Cleaning the row itself
-					for index, elt in enumerate(row):
-						if '(O)' in elt:
-							row[index] = ''
-						if '(A)' in elt or '(P)' in elt:
-							row[index] = row[index][:-4].replace(',','.')
-					
 					# Saving 
-					toWrite.append([depDataName[key][1], depDataName[key][2]] + row)
+					toWrite.append([depDataName[key][2], depDataName[key][1]] + row)
 					found = True
 					break
 			if not found:
