@@ -22,10 +22,11 @@ var ctx = {
     dateAvailable: {population: [], pib: [], esperance: [], natalite: [], accouchement: []},
     min: {population: Infinity, pib: Infinity, esperance: Infinity, natalite: Infinity, accouchement: Infinity},
     max: {population: 0, pib: 0, esperance: 0, natalite: 0, accouchement: 0},
-    mycolor: d3.scaleLinear().domain(0,100).range("red", "blue"),
+    mycolor: d3.scaleLinear().domain([0,200, 3000000]).range(["red", "white", "blue"]),
     lowColor: "#194D6F",
     highColor: "#F69202",
-    ndColor: "white",
+    midColor: "white",
+    ndColor: "grey",
 };
 
 var animationMap = {
@@ -64,10 +65,6 @@ var makeMap = function(svgEl){
 
     addDpt();
 };
-
-// color scale for drinking water data
-var dwScale4color = d3.scaleLinear().domain([0,100]).range([1,0]);
-
 
 
 
@@ -440,7 +437,7 @@ var setMapFromHtml = function(){
 }
 
 var setMapFromCtx = function(transitionDuration){
-    ctx.mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range([ctx.lowColor,ctx.highColor]);
+    ctx.mycolor = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.currentlyDisplayed]), (parseFloat(ctx.min[ctx.currentlyDisplayed]) + parseFloat(ctx.max[ctx.currentlyDisplayed])) / 2, parseFloat(ctx.max[ctx.currentlyDisplayed])]).range([ctx.lowColor, ctx.midColor, ctx.highColor]);
     d3.selectAll(".dpt")
         .transition("colorationMap")
         .duration(transitionDuration)
@@ -471,7 +468,7 @@ var setTooltipDpt = function() {
 }
 
 var stopSetMap = function() {
-    ctx.mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range([ctx.lowColor,ctx.highColor]);
+    ctx.mycolor = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.currentlyDisplayed]), (parseFloat(ctx.min[ctx.currentlyDisplayed]) + parseFloat(ctx.max[ctx.currentlyDisplayed])) / 2, parseFloat(ctx.max[ctx.currentlyDisplayed])]).range([ctx.lowColor, ctx.midColor, ctx.highColor]);
     d3.selectAll(".dpt")
         .interrupt("colorationMap")
         .style("fill", function(d){

@@ -279,7 +279,6 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 		line_count += 1
 	print(f'Processed {line_count} lines from data/donnees_brutes/esperanceDeVie.csv')
 
-
 # Dealing with the difference between males and females - we only want the mean
 newToWrite = [toWrite.copy()[0]]
 alreadyAdded = set()
