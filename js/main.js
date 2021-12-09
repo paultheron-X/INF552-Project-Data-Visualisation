@@ -1,3 +1,9 @@
+
+//######################################################
+//###################### CONSTANTS #####################
+//######################################################
+
+
 const MAP_W = 960;
 const MAP_H = 600;
 
@@ -11,12 +17,15 @@ var ctx = {
     departements: [],
     mapG: 0,
     currentlyDisplayed: "population",
-    currentDates: [],
     currentYear: 2021,
+    minYear: 1970,
     dateAvailable: {population: [], pib: [], esperance: [], natalite: [], accouchement: []},
     min: {population: Infinity, pib: Infinity, esperance: Infinity, natalite: Infinity, accouchement: Infinity},
     max: {population: 0, pib: 0, esperance: 0, natalite: 0, accouchement: 0},
     mycolor: d3.scaleLinear().domain(0,100).range("red", "blue"),
+    lowColor: "#194D6F",
+    highColor: "#F69202",
+    ndColor: "white",
 };
 
 var animationMap = {
@@ -33,7 +42,16 @@ var animationLegend = {
     len: 0,
 }
 
-/* Utils */
+
+
+
+
+
+
+//######################################################
+//######################## UTILS #######################
+//######################################################
+
 function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
@@ -49,6 +67,19 @@ var makeMap = function(svgEl){
 
 // color scale for drinking water data
 var dwScale4color = d3.scaleLinear().domain([0,100]).range([1,0]);
+
+
+
+
+
+
+
+
+
+
+//######################################################
+//################### VISUALIZATION ####################
+//######################################################
 
 var addDpt = function(){
     var projection = d3.geoConicConformal()
@@ -80,23 +111,43 @@ var createViz = function(){
     loadData(svgEl);
 };
 
+
+
+
+
+
+
+
+
+
+//######################################################
+//################### DATA LOADING #####################
+//######################################################
+
+
 var loadData = function(svgEl){
 
     var promises = [
         d3.json("data/carte_json/a-dep2021.json"),
         d3.csv("data/donnees_clean/population.csv"),
         d3.csv("data/donnees_clean/pibParHab.csv"),
+        d3.csv("data/donnees_clean/esperanceDeVie.csv"),
+        d3.csv("data/donnees_clean/ageFemmesAccouchement.csv"),
+        d3.csv("data/donnees_clean/tauxNatalite.csv"),
 ];
     Promise.all(promises).then(function(data){
 
         m0 = data[0]["features"].length;
         m1 = data[1].length;
         m2 = data[2].length;
+        m3 = data[3].length;
+        m4 = data[4].length;
+        m5 = data[5].length;
         
         /*POPULATION*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[1][0]).length;i++) {
-            if (isNumeric(Object.keys(data[1][0])[i])){
+            if (isNumeric(Object.keys(data[1][0])[i]) && Object.keys(data[1][0])[i] >= ctx.minYear){
                 ctx.dateAvailable["population"].push(Object.keys(data[1][0])[i]);
             }
         }
@@ -121,6 +172,8 @@ var loadData = function(svgEl){
                 }
             }
             if (! found){
+                data[0]["features"][i]["properties"]["population"] = {};
+                for (let k=0; k<ctx.dateAvailable['population'].length; k++){data[0]["features"][i]["properties"]["population"][ctx.dateAvailable['esperance'][k]] = 'n.d'};
                 console.log("Not found population :");
                 console.log(data[0]["features"][i]["properties"]);
             }
@@ -130,7 +183,7 @@ var loadData = function(svgEl){
         /*PIB*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[2][0]).length;i++) {
-            if (isNumeric(Object.keys(data[2][0])[i])){
+            if (isNumeric(Object.keys(data[2][0])[i]) && Object.keys(data[2][0])[i] >= ctx.minYear){
                 ctx.dateAvailable['pib'].push(Object.keys(data[2][0])[i]);
             }
         }
@@ -155,10 +208,125 @@ var loadData = function(svgEl){
                 }
             }
             if (! found){
+                data[0]["features"][i]["properties"]["pib"] = {};
+                for (let k=0; k<ctx.dateAvailable['pib'].length; k++){data[0]["features"][i]["properties"]["pib"][ctx.dateAvailable['pib'][k]] = 'n.d'};
                 console.log("Not found PIB :");
                 console.log(data[0]["features"][i]["properties"]);
             }
         };
+
+
+        /*ESPERANCE DE VIE*/
+        /*Getting the dates of the data*/
+        for (let i=0;i<Object.keys(data[3][0]).length;i++) {
+            if (isNumeric(Object.keys(data[3][0])[i]) && Object.keys(data[3][0])[i] >= ctx.minYear){
+                ctx.dateAvailable['esperance'].push(Object.keys(data[3][0])[i]);
+            }
+        }
+
+        /*Filling the geojson*/
+        for (let i=0; i<m0; i++){
+            var found = false;
+            for (let j = 0; j<m3; j++){
+                if (data[0]["features"][i]["properties"]["dep"] == data[3][j]["CodeDep"] || (data[0]["features"][i]["properties"]["dep"][0] == '0' && data[0]["features"][i]["properties"]["dep"].substring(1) == data[3][j]["CodeDep"])) {
+                    data[0]["features"][i]["properties"]["esperance"] = data[3][j];
+                    /*Max and min*/
+                    for (let k=0; k<ctx.dateAvailable['esperance'].length; k++){
+                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" && data[3][j][ctx.dateAvailable['esperance'][k]] - ctx.min['esperance'] < 0){
+                            ctx.min['esperance'] = data[3][j][ctx.dateAvailable['esperance'][k]];
+                        };
+                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" &&  data[3][j][ctx.dateAvailable['esperance'][k]] - ctx.max['esperance'] > 0){
+                            ctx.max['esperance'] = data[3][j][ctx.dateAvailable['esperance'][k]];
+                        }
+                    };
+                    found = true;
+                    break;
+                }
+            }
+            if (! found){
+                data[0]["features"][i]["properties"]["esperance"] = {};
+                for (let k=0; k<ctx.dateAvailable['esperance'].length; k++){data[0]["features"][i]["properties"]["esperance"][ctx.dateAvailable['esperance'][k]] = 'n.d'};
+                console.log("Not found esperance :");
+                console.log(data[0]["features"][i]["properties"]);
+            }
+        };
+
+
+
+
+        /*ACCOUCHEMENT*/
+        /*Getting the dates of the data*/
+        for (let i=0;i<Object.keys(data[4][0]).length;i++) {
+            if (isNumeric(Object.keys(data[4][0])[i]) && Object.keys(data[4][0])[i] >= ctx.minYear){
+                ctx.dateAvailable['accouchement'].push(Object.keys(data[4][0])[i]);
+            }
+        }
+
+        /*Filling the geojson*/
+        for (let i=0; i<m0; i++){
+            var found = false;
+            for (let j = 0; j<m4; j++){
+                if (data[0]["features"][i]["properties"]["dep"] == data[4][j]["CodeDep"] || (data[0]["features"][i]["properties"]["dep"][0] == '0' && data[0]["features"][i]["properties"]["dep"].substring(1) == data[4][j]["CodeDep"])) {
+                    data[0]["features"][i]["properties"]["accouchement"] = data[4][j];
+                    /*Max and min*/
+                    for (let k=0; k<ctx.dateAvailable['accouchement'].length; k++){
+                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" && data[4][j][ctx.dateAvailable['accouchement'][k]] - ctx.min['accouchement'] < 0){
+                            ctx.min['accouchement'] = data[4][j][ctx.dateAvailable['accouchement'][k]];
+                        };
+                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" &&  data[4][j][ctx.dateAvailable['accouchement'][k]] - ctx.max['accouchement'] > 0){
+                            ctx.max['accouchement'] = data[4][j][ctx.dateAvailable['accouchement'][k]];
+                        }
+                    };
+                    found = true;
+                    break;
+                }
+            }
+            if (! found){
+                data[0]["features"][i]["properties"]["accouchement"] = {};
+                for (let k=0; k<ctx.dateAvailable['accouchement'].length; k++){data[0]["features"][i]["properties"]["accouchement"][ctx.dateAvailable['accouchement'][k]] = 'n.d'};
+                console.log("Not found accouchement :");
+                console.log(data[0]["features"][i]["properties"]);
+            }
+        };
+
+
+
+        /*NATALITE*/
+        /*Getting the dates of the data*/
+        for (let i=0;i<Object.keys(data[5][0]).length;i++) {
+            if (isNumeric(Object.keys(data[5][0])[i]) && Object.keys(data[5][0])[i] >= ctx.minYear){
+                ctx.dateAvailable['natalite'].push(Object.keys(data[5][0])[i]);
+            }
+        }
+
+        /*Filling the geojson*/
+        for (let i=0; i<m0; i++){
+            var found = false;
+            for (let j = 0; j<m5; j++){
+                if (data[0]["features"][i]["properties"]["dep"] == data[5][j]["CodeDep"] || (data[0]["features"][i]["properties"]["dep"][0] == '0' && data[0]["features"][i]["properties"]["dep"].substring(1) == data[5][j]["CodeDep"])) {
+                    data[0]["features"][i]["properties"]["natalite"] = data[5][j];
+                    /*Max and min*/
+                    for (let k=0; k<ctx.dateAvailable['natalite'].length; k++){
+                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" && data[5][j][ctx.dateAvailable['natalite'][k]] - ctx.min['natalite'] < 0){
+                            ctx.min['natalite'] = data[5][j][ctx.dateAvailable['natalite'][k]];
+                        };
+                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" &&  data[5][j][ctx.dateAvailable['natalite'][k]] - ctx.max['natalite'] > 0){
+                            ctx.max['natalite'] = data[5][j][ctx.dateAvailable['natalite'][k]];
+                        }
+                    };
+                    found = true;
+                    break;
+                }
+            }
+            if (! found){
+                data[0]["features"][i]["properties"]["natalite"] = {};
+                for (let k=0; k<ctx.dateAvailable['natalite'].length; k++){data[0]["features"][i]["properties"]["natalite"][ctx.dateAvailable['natalite'][k]] = 'n.d'};
+                console.log("Not found natalite :");
+                console.log(data[0]["features"][i]["properties"]);
+            }
+        };
+
+
 
         console.log(data);
         ctx.departements = data[0];
@@ -173,6 +341,19 @@ var loadData = function(svgEl){
     }).catch(function(error){console.log(error)});
 
 };
+
+
+
+
+
+
+
+
+
+//######################################################
+//################### COLOR LEGEND #####################
+//######################################################
+
 
 var createColorLegend = function(svgEl){
     var valueRange4legend = d3.range(ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed], (ctx.max[ctx.currentlyDisplayed] - ctx.min[ctx.currentlyDisplayed]) / 300).reverse();
@@ -239,21 +420,37 @@ var setColorLegend = function() {
 
 
 
+
+
+
+
+
+
+//######################################################
+//###################### SET MAP #######################
+//######################################################
+
+
 var setMapFromHtml = function(){
     ctx.currentlyDisplayed = document.querySelector('#data4map').value;
     ctx.currentYear = ctx.dateAvailable[ctx.currentlyDisplayed][ctx.dateAvailable[ctx.currentlyDisplayed].length - 1];
     setMapFromCtx(ctx.transitionDuration);
+    setMapLegendFromCtx();
+    console.log(ctx);
 }
 
 var setMapFromCtx = function(transitionDuration){
-    ctx.mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range(["white","#194D6F"]);
+    ctx.mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range([ctx.lowColor,ctx.highColor]);
     d3.selectAll(".dpt")
         .transition("colorationMap")
         .duration(transitionDuration)
         .style("fill", function(d){
-            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d"){
-                return "grey";
-            }return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d" || d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == ""){
+                return ctx.ndColor;
+            }
+            else{
+                return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+            }
         });
 
     setYearMenu();
@@ -264,28 +461,35 @@ var setMapFromCtx = function(transitionDuration){
 var addTooltipDpt = function() {
     d3.selectAll(".dpt")
         .append('title')
-        .text((d) => ctx.currentlyDisplayed + " : " + d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+        .text((d) => d["properties"]['libgeo'] + '\n' + ctx.currentlyDisplayed + " : " + d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
 }
 
 var setTooltipDpt = function() {
     d3.selectAll(".dpt")
         .select('title')
-        .text((d) => ctx.currentlyDisplayed + " : " + d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+        .text((d) => d["properties"]['libgeo'] + '\n' + ctx.currentlyDisplayed + " : " + d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
 }
 
-
 var stopSetMap = function() {
-    var mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range(["white","#194D6F"]);
+    ctx.mycolor = d3.scaleLinear().domain([ctx.min[ctx.currentlyDisplayed],ctx.max[ctx.currentlyDisplayed]]).range([ctx.lowColor,ctx.highColor]);
     d3.selectAll(".dpt")
         .interrupt("colorationMap")
         .style("fill", function(d){
-            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d"){
-                return "grey";
-            }return mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d" || d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == ""){
+                return ctx.ndColor;
+            }return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
         });
 }
 
 
+
+
+
+
+
+//######################################################
+//##################### MAP MENU #######################
+//######################################################
 
 var setYearMenu = function() {
     d3.select("#selectYear4map")
@@ -320,7 +524,22 @@ var setMapLegendFromCtx = function(){
 var setMapLegendFromValue = function(value){
     d3.select("#currentYearMap")
         .text("Year currently displayed on the map : " + value);
+    d3.select("#selectYear4map")
+        .property('value', value);
 }
+
+
+
+
+
+
+
+
+
+
+//######################################################
+//#################### ANIMATION #######################
+//######################################################
 
 var animer = function(){
     d3.select("#setAnimationBtn")
@@ -401,5 +620,3 @@ var nextStepAnimationLegend = function(index){
         }
     }, animationLegend.delays[index])
 }
-
-

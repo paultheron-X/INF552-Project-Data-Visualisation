@@ -17,7 +17,18 @@ def clean(string):
 		if string == "2A" or string == "2B":
 			return string
 		else :
-			return string.lower().replace(' ','').replace('-','')
+			return string.lower()
+
+def boolKeyDepName(key, depString):
+	if key == 'loire' and 'loiret' in depString:
+		return False
+	if key == 'ain' and ('aine' in depString or 'aint' in depString):
+		return False
+	if key == 'oise' and 'val' in depString:
+		return False
+
+	return key in depString and not key+'-' in depString and not '-'+key in depString
+
 
 def addValuesLinear(row, datesToAddPerIndex, mode='float'):
 	result = []
@@ -206,7 +217,7 @@ with open("data/donnees_brutes/ageFemmeAccouchement.csv", "r") as csv_file:
 					row[index] = row[index][:-4].replace(',','.')
 
 			for key in depDataName:
-				if key in clean(row[0]):
+				if boolKeyDepName(key, clean(row[0])):
 					# Saving 
 					rowToWrite = [depDataName[key][2], depDataName[key][1]] + row
 					found = True
@@ -257,7 +268,7 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 					row[index] = row[index][:-4].replace(',','.')
 
 			for key in depDataName:
-				if key in clean(row[0]):	
+				if boolKeyDepName(key, clean(row[0])):
 					# Saving 
 					toWrite.append([depDataName[key][2], depDataName[key][1]] + row)
 					found = True
@@ -267,6 +278,7 @@ with open("data/donnees_brutes/esperanceDeVie.csv", "r") as csv_file:
 				toWrite.append(["##","##"] + row)
 		line_count += 1
 	print(f'Processed {line_count} lines from data/donnees_brutes/esperanceDeVie.csv')
+
 
 # Dealing with the difference between males and females - we only want the mean
 newToWrite = [toWrite.copy()[0]]
@@ -332,7 +344,7 @@ with open("data/donnees_brutes/tauxNatalite.csv", "r") as csv_file:
 					row[index] = row[index][:-4].replace(',','.')
 
 			for key in depDataName:
-				if key in clean(row[0]):
+				if boolKeyDepName(key, clean(row[0])):
 					# Saving 
 					toWrite.append([depDataName[key][2], depDataName[key][1]] + row)
 					found = True
