@@ -6,6 +6,8 @@
 
 const MAP_W = 960;
 const MAP_H = 600;
+const SQR_W = 960;
+const SQR_H = 600;
 
 
 var ctx = {
@@ -17,7 +19,7 @@ var ctx = {
     departements: [],
     mapG: 0,
     currentlyDisplayed: "population",
-    currentYear: 2021,
+    currentYearMap: 2021,
     minYear: 1970,
     dateAvailable: {population: [], pib: [], esperance: [], natalite: [], accouchement: []},
     min: {population: Infinity, pib: Infinity, esperance: Infinity, natalite: Infinity, accouchement: Infinity},
@@ -27,6 +29,11 @@ var ctx = {
     highColor: "#F69202",
     midColor: "white",
     ndColor: "grey",
+    sqr_x: "accouchement",
+    sqr_y: "esperance",
+    sqr_r: "population",
+    sqr_c: "pib",
+    currentYearSqr: 2015,
 };
 
 var animationMap = {
@@ -102,10 +109,13 @@ var addDpt = function(){
 
 var createViz = function(){
     console.log("Using D3 v"+d3.version);
-    var svgEl = d3.select("#main").append("svg");
+    var svgEl = d3.select("#main").append("svg").attr('id','deptMap');
+    var svgElSqr = d3.select("#main").append("svg").attr('id','sqrAnim');
     svgEl.attr("width", MAP_W);
     svgEl.attr("height", MAP_H);
-    loadData(svgEl);
+    svgElSqr.attr("width", SQR_W);
+    svgElSqr.attr("height", SQR_H);
+    loadData(svgEl,svgElSqr);
 };
 
 
@@ -122,7 +132,7 @@ var createViz = function(){
 //######################################################
 
 
-var loadData = function(svgEl){
+var loadData = function(svgEl, svgElSqr){
 
     var promises = [
         d3.json("data/carte_json/a-dep2021.json"),
@@ -157,10 +167,10 @@ var loadData = function(svgEl){
                     data[0]["features"][i]["properties"]["population"] = data[1][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['population'].length; k++){
-                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" && data[1][j][ctx.dateAvailable['population'][k]] - ctx.min['population'] < 0){
+                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" && parseFloat(data[1][j][ctx.dateAvailable['population'][k]]) - parseFloat(ctx.min['population']) < 0){
                             ctx.min['population'] = data[1][j][ctx.dateAvailable['population'][k]];
                         };
-                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" &&  data[1][j][ctx.dateAvailable['population'][k]] - ctx.max['population'] > 0){
+                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" &&  parseFloat(data[1][j][ctx.dateAvailable['population'][k]]) - parseFloat(ctx.max['population']) > 0){
                             ctx.max['population'] = data[1][j][ctx.dateAvailable['population'][k]];
                         }
                     };
@@ -193,10 +203,10 @@ var loadData = function(svgEl){
                     data[0]["features"][i]["properties"]["pib"] = data[2][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['pib'].length; k++){
-                        if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && data[2][j][ctx.dateAvailable['pib'][k]] < ctx.min['pib']){
+                        if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && parseFloat(data[2][j][ctx.dateAvailable['pib'][k]]) < parseFloat(ctx.min['pib'])){
                             ctx.min['pib'] = data[2][j][ctx.dateAvailable['pib'][k]];
                         };
-                        if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && data[2][j][ctx.dateAvailable['pib'][k]] - ctx.max['pib'] > 0){
+                        if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && parseFloat(data[2][j][ctx.dateAvailable['pib'][k]]) - parseFloat(ctx.max['pib']) > 0){
                             ctx.max['pib'] = data[2][j][ctx.dateAvailable['pib'][k]];
                         }
                     };
@@ -229,10 +239,10 @@ var loadData = function(svgEl){
                     data[0]["features"][i]["properties"]["esperance"] = data[3][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['esperance'].length; k++){
-                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" && data[3][j][ctx.dateAvailable['esperance'][k]] - ctx.min['esperance'] < 0){
+                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" && parseFloat(data[3][j][ctx.dateAvailable['esperance'][k]]) - parseFloat(ctx.min['esperance']) < 0){
                             ctx.min['esperance'] = data[3][j][ctx.dateAvailable['esperance'][k]];
                         };
-                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" &&  data[3][j][ctx.dateAvailable['esperance'][k]] - ctx.max['esperance'] > 0){
+                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" &&  parseFloat(data[3][j][ctx.dateAvailable['esperance'][k]]) - parseFloat(ctx.max['esperance']) > 0){
                             ctx.max['esperance'] = data[3][j][ctx.dateAvailable['esperance'][k]];
                         }
                     };
@@ -267,10 +277,10 @@ var loadData = function(svgEl){
                     data[0]["features"][i]["properties"]["accouchement"] = data[4][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['accouchement'].length; k++){
-                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" && data[4][j][ctx.dateAvailable['accouchement'][k]] - ctx.min['accouchement'] < 0){
+                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" && parseFloat(data[4][j][ctx.dateAvailable['accouchement'][k]]) - parseFloat(ctx.min['accouchement']) < 0){
                             ctx.min['accouchement'] = data[4][j][ctx.dateAvailable['accouchement'][k]];
                         };
-                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" &&  data[4][j][ctx.dateAvailable['accouchement'][k]] - ctx.max['accouchement'] > 0){
+                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" &&  parseFloat(data[4][j][ctx.dateAvailable['accouchement'][k]]) - parseFloat(ctx.max['accouchement']) > 0){
                             ctx.max['accouchement'] = data[4][j][ctx.dateAvailable['accouchement'][k]];
                         }
                     };
@@ -304,10 +314,10 @@ var loadData = function(svgEl){
                     data[0]["features"][i]["properties"]["natalite"] = data[5][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['natalite'].length; k++){
-                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" && data[5][j][ctx.dateAvailable['natalite'][k]] - ctx.min['natalite'] < 0){
+                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" && parseFloat(data[5][j][ctx.dateAvailable['natalite'][k]]) - parseFloat(ctx.min['natalite'] < 0)){
                             ctx.min['natalite'] = data[5][j][ctx.dateAvailable['natalite'][k]];
                         };
-                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" &&  data[5][j][ctx.dateAvailable['natalite'][k]] - ctx.max['natalite'] > 0){
+                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" &&  parseFloat(data[5][j][ctx.dateAvailable['natalite'][k]]) - parseFloat(ctx.max['natalite'] > 0)){
                             ctx.max['natalite'] = data[5][j][ctx.dateAvailable['natalite'][k]];
                         }
                     };
@@ -325,6 +335,7 @@ var loadData = function(svgEl){
 
 
 
+        // Exit
         console.log(data);
         ctx.departements = data[0];
         makeMap(svgEl);
@@ -332,8 +343,12 @@ var loadData = function(svgEl){
         setYearMenu();
         setMapLegendFromCtx();
 
+        // ColorLegend
         createColorLegend(svgEl);
-        addTooltipDpt();
+        addTooltip(".dpt");
+
+        // Square
+        initSVGcanvas(svgElSqr);
         
     }).catch(function(error){console.log(error)});
 
@@ -430,7 +445,7 @@ var setColorLegend = function() {
 
 var setMapFromHtml = function(){
     ctx.currentlyDisplayed = document.querySelector('#data4map').value;
-    ctx.currentYear = ctx.dateAvailable[ctx.currentlyDisplayed][ctx.dateAvailable[ctx.currentlyDisplayed].length - 1];
+    ctx.currentYearMap = ctx.dateAvailable[ctx.currentlyDisplayed][ctx.dateAvailable[ctx.currentlyDisplayed].length - 1];
     setMapFromCtx(ctx.transitionDuration);
     setMapLegendFromCtx();
     console.log(ctx);
@@ -442,29 +457,17 @@ var setMapFromCtx = function(transitionDuration){
         .transition("colorationMap")
         .duration(transitionDuration)
         .style("fill", function(d){
-            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d" || d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == ""){
+            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYearMap] == "n.d" || d["properties"][ctx.currentlyDisplayed][ctx.currentYearMap] == ""){
                 return ctx.ndColor;
             }
             else{
-                return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+                return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYearMap])
             }
         });
 
     setYearMenu();
-    setTooltipDpt();
+    setTooltip(".dpt");
     setColorLegend();
-}
-
-var addTooltipDpt = function() {
-    d3.selectAll(".dpt")
-        .append('title')
-        .text((d) => d["properties"]['libgeo'] + '\n' + ctx.currentlyDisplayed + " : " + d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
-}
-
-var setTooltipDpt = function() {
-    d3.selectAll(".dpt")
-        .select('title')
-        .text((d) => d["properties"]['libgeo'] + '\n' + ctx.currentlyDisplayed + " : " + d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
 }
 
 var stopSetMap = function() {
@@ -472,9 +475,48 @@ var stopSetMap = function() {
     d3.selectAll(".dpt")
         .interrupt("colorationMap")
         .style("fill", function(d){
-            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == "n.d" || d["properties"][ctx.currentlyDisplayed][ctx.currentYear] == ""){
+            if (d["properties"][ctx.currentlyDisplayed][ctx.currentYearMap] == "n.d" || d["properties"][ctx.currentlyDisplayed][ctx.currentYearMap] == ""){
                 return ctx.ndColor;
-            }return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYear])
+            }return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYearMap])
+        });
+}
+
+
+
+
+
+
+
+
+//######################################################
+//#################### TOOLTIPS ########################
+//######################################################
+
+var addTooltip = function(targetedClass){
+    d3.selectAll(targetedClass)
+        .append('title')
+        .text(function(d){
+            var tooltip = d["properties"]['libgeo']
+            tooltip = tooltip + "\n" + "population" + " : " + d["properties"]["population"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "pib" + " : " + d["properties"]["pib"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "esperance" + " : " + d["properties"]["esperance"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "accouchement" + " : " + d["properties"]["accouchement"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "natalite" + " : " + d["properties"]["natalite"][ctx.currentYearSqr]
+            return tooltip
+        });
+}
+
+var setTooltip = function(targetedClass){
+    d3.selectAll(targetedClass)
+        .select('title')
+        .text(function(d){
+            var tooltip = d["properties"]['libgeo']
+            tooltip = tooltip + "\n" + "population" + " : " + d["properties"]["population"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "pib" + " : " + d["properties"]["pib"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "esperance" + " : " + d["properties"]["esperance"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "accouchement" + " : " + d["properties"]["accouchement"][ctx.currentYearSqr]
+            tooltip = tooltip + "\n" + "natalite" + " : " + d["properties"]["natalite"][ctx.currentYearSqr]
+            return tooltip
         });
 }
 
@@ -509,13 +551,13 @@ var setYear = function(){
 }
 
 var setYearFromValue = function(value) {
-    ctx.currentYear = value;
+    ctx.currentYearMap = value;
     setMapLegendFromCtx();
     setMapFromCtx(ctx.transitionDuration);
 }
 
 var setMapLegendFromCtx = function(){
-    setMapLegendFromValue(ctx.currentYear);
+    setMapLegendFromValue(ctx.currentYearMap);
 }
 
 var setMapLegendFromValue = function(value){
@@ -544,7 +586,7 @@ var animer = function(){
         .attr("value","STOP !");
     
         /*Initialisation*/
-        ctx.currentYear = ctx.dateAvailable[ctx.currentlyDisplayed][0];
+        ctx.currentYearMap = ctx.dateAvailable[ctx.currentlyDisplayed][0];
         setMapFromCtx(0);
         setMapLegendFromCtx();
 
@@ -581,7 +623,7 @@ var stopAnimation = function(){
         .attr("onclick", "animer();")
         .attr("value","Animer >");
     setMapLegendFromCtx();
-    console.log(ctx.currentYear);
+    console.log(ctx.currentYearMap);
     animationMap.ongoing = false;
     animationLegend.ongoing = false;
     stopSetMap();
@@ -591,7 +633,7 @@ var nextStepAnimationMap = function(index){
     setTimeout(function(){
         if (animationMap.ongoing){
             console.log("Entering Map Animation");
-            ctx.currentYear = animationMap.dates[index];
+            ctx.currentYearMap = animationMap.dates[index];
             setMapFromCtx(animationMap.delays[index]);
             if (index != animationMap.len - 1){
                 nextStepAnimationMap(index + 1);
@@ -617,3 +659,100 @@ var nextStepAnimationLegend = function(index){
         }
     }, animationLegend.delays[index])
 }
+
+
+
+
+
+
+
+
+
+
+//######################################################
+//################### SQR CANVA ########################
+//######################################################
+
+var initSVGcanvas = function(svgElSqr){
+
+    // a SVG group for background elements (axes, labels)
+    svgElSqr.append("g").attr("id", "bkgG");
+
+    // a SVG group for circles
+    svgElSqr.append("g").attr("id", "circG");
+
+    // scale for x-axis
+    ctx.xScale = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.sqr_x]), parseFloat(ctx.max[ctx.sqr_x])])
+                                 .range([80, SQR_W-20]);
+    // scale for y-axis
+    ctx.yScale = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.sqr_y]), parseFloat(ctx.max[ctx.sqr_y])])
+                                 .range([SQR_H-60, 20]);
+
+    // scale for r-axis
+    ctx.rScale = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.sqr_r]), parseFloat(ctx.max[ctx.sqr_r])])
+                                 .range([3, 20]);
+
+    // color scale to encode year of discovery
+    ctx.cScale = d3.scaleLinear()
+                        .domain([parseFloat(ctx.min[ctx.sqr_c]), (parseFloat(ctx.min[ctx.sqr_c]) + parseFloat(ctx.max[ctx.sqr_c])) / 2, parseFloat(ctx.max[ctx.sqr_c])])
+                        .range([ctx.lowColor, ctx.midColor, ctx.highColor]);
+    
+    // x- and y- axes
+    d3.select("#bkgG").append("g")
+      .attr("transform", `translate(0,${SQR_H-50})`)
+      .call(d3.axisBottom(ctx.xScale).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "middle");
+    d3.select("#bkgG").append("g")
+      .attr("transform", "translate(70,0)")
+      .call(d3.axisLeft(ctx.yScale).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "end");
+    // x-axis label
+    d3.select("#bkgG")
+      .append("text")
+      .attr("y", SQR_H - 12)
+      .attr("x", SQR_W/2)
+      .classed("axisLb", true)
+      .text(ctx.sqr_x);
+    // y-axis label
+    d3.select("#bkgG")
+      .append("text")
+      .attr("y", 0)
+      .attr("x", 0)
+      .attr("transform", `rotate(-90) translate(-${SQR_H/2},18)`)
+      .classed("axisLb", true)
+      .text(ctx.sqr_y);
+    
+    
+    setSqrFromCtx();
+}
+
+
+//######################################################
+//################ SQR POPULATION ######################
+//######################################################
+
+var deptTranslator = function(x_value, y_value){
+    return `translate(${ctx.xScale(x_value)},${ctx.yScale(y_value)})`;
+}
+
+var setSqrFromCtx = function(){
+    d3.selectAll(".sqrDptCirc")
+        .remove()
+
+    d3.select("#circG")
+        .selectAll('circle')
+        .data(ctx.departements.features)
+        .enter()
+        .append("circle")
+        .attr('class', 'sqrDptCirc')
+        .attr('cx', (d) => ctx.xScale(d["properties"][ctx.sqr_x][ctx.currentYearSqr]))
+        .attr('cy', (d) => ctx.yScale(d["properties"][ctx.sqr_y][ctx.currentYearSqr]))
+        .attr('r', (d) => ctx.rScale(d["properties"][ctx.sqr_r][ctx.currentYearSqr]))
+        .attr('fill', (d) => ctx.cScale(d["properties"][ctx.sqr_c][ctx.currentYearSqr]))
+        .attr("stroke", 'black')
+    
+    addTooltip(".sqrDptCirc");
+};
+
