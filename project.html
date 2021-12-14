@@ -41,27 +41,65 @@ svg {
     <body onload="createViz()">
         <div id="main">
             <div style="float:right">
-                <form style="margin:10%">
-                    <select id="data4map" name="data4map">
-                      <option value="population">Population</option>
-                      <option value="pib">PIB par habitant</option>
-                      <option value="esperance">Éspérance de vie</option>
-                      <option value="natalite">Taux de natalité</option>
-                      <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
-                    </select>
-                    <input type="button" value="Set" onclick="setMapFromHtml();" id="setDataBtn"/>
+                <div id='mapControl'>
+                    <p>MAP MENU</p>
+                    <form style="margin:10%" id='mapForm'>
+                        <select id="data4map" name="data4map">
+                          <option value="population">Population</option>
+                          <option value="pib">PIB par habitant</option>
+                          <option value="esperance">Éspérance de vie</option>
+                          <option value="natalite">Taux de natalité</option>
+                          <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
+                        </select>
+                        <input type="button" value="Set" onclick="setMapFromHtml();" id="setDataBtn"/>
 
-                    <select name="years" id="selectYear4map">
-                      <option value="2021" class = "yearOption">YYYY</option>
-                    </select>
-                    <input type="button" value="Set" onclick="setYear();" id="setYearBtn"/>
+                        <select name="years" id="selectYear4map">
+                          <option value="2021" class = "yearOption">YYYY</option>
+                        </select>
+                        <input type="button" value="Set" onclick="setYearMap();" id="setYearBtn"/>
 
-                     </br>
+                        </br>
+                        </br>
+                        <input type="button" value="Animer >" onclick="animerMap();" id="setAnimationBtn"/>
+                      
+
+                      </form>
+                      <p id="currentYearMap"></p>
+                  </div>
+
+
+                  <div id='sqrControl'>
                     </br>
-                     <input type="button" value="Animer >" onclick="animer();" id="setAnimationBtn"/>              
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    <p>SQR MENU</p>
+                    <form style="margin:10%" id='sqrForm'>
+                        <select name="years4sqr" id="selectYear4sqr">
+                          <option value="2021" class = "yearOption">YYYY</option>
+                        </select>
+                        <input type="button" value="Set" onclick="setYearSqr();" id="setYearBtn"/>
 
-                  </form>
-                  <p id="currentYearMap"></p>
+                        </br>
+                        </br>
+                        <input type="button" value="Animer >" onclick="animerSqr();" id="setAnimationSqrBtn"/>
+                      
+
+                      </form>
+                      <p id="currentYearSqr"></p>
+                  </div>
             </div>
         </div>
 

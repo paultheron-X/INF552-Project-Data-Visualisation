@@ -8,6 +8,8 @@ const MAP_W = 960;
 const MAP_H = 600;
 const SQR_W = 960;
 const SQR_H = 600;
+const PLT_W = 960;
+const PLT_H = 600;
 
 
 var ctx = {
@@ -29,11 +31,17 @@ var ctx = {
     highColor: "#F69202",
     midColor: "white",
     ndColor: "grey",
+    textColor: 'grey',
     sqr_x: "accouchement",
     sqr_y: "esperance",
     sqr_r: "population",
     sqr_c: "pib",
     currentYearSqr: 2015,
+    mindate:0,
+    maxdate:Infinity,
+    datesAvailableSqr:[],
+    animationDurationSqr: 20000,
+    toPlt: 12,
 };
 
 var animationMap = {
@@ -44,6 +52,20 @@ var animationMap = {
 }
 
 var animationLegend = {
+    ongoing: false,
+    dates: [],
+    delays: [],
+    len: 0,
+}
+
+var animationSqr = {
+    ongoing: false,
+    dates: [],
+    delays: [],
+    len: 0,
+}
+
+var animationLegendSqr = {
     ongoing: false,
     dates: [],
     delays: [],
@@ -73,8 +95,42 @@ var makeMap = function(svgEl){
     addDpt();
 };
 
+var round = function(x, d){
+    return Math.round(x * Math.pow(10,d))/Math.pow(10,d)
+}
 
 
+
+
+
+
+//######################################################
+//################# EXIT DATA LOADING ##################
+//######################################################
+
+var exitDataLoading = function(svgEl, svgElSqr, svgElPlt){
+    
+    //Making the map
+    makeMap(svgEl);
+    setMapFromHtml(500);
+
+    //Map Menu
+    setYearMenu();
+    setYearMenuSqr();
+    setMapLegendFromCtx();
+
+    // Map ColorLegend
+    createColorLegend(svgEl);
+    addTooltip(".dpt");
+
+    // Square
+    initSVGcanvas(svgElSqr);
+    createColorLegendSqr(svgElSqr);
+    createCircleLegendSqr(svgElSqr);
+
+    // Scattered plot
+    initSVGcanvasPlt(svgElPlt);
+}
 
 
 
@@ -107,15 +163,50 @@ var addDpt = function(){
 
 };
 
+var addCircles = function(){
+    d3.selectAll(".sqrDptCirc")
+        .remove()
+
+    d3.select("#circG")
+        .selectAll('circle')
+        .data(ctx.departements.features)
+        .enter()
+        .append("circle")
+        .attr('class', 'sqrDptCirc')
+        .attr('cx', (d) => ctx.xScale(d["properties"][ctx.sqr_x][ctx.currentYearSqr]))
+        .attr('cy', (d) => ctx.yScale(d["properties"][ctx.sqr_y][ctx.currentYearSqr]))
+        .attr('r', (d) => ctx.rScale(d["properties"][ctx.sqr_r][ctx.currentYearSqr]))
+        .attr('fill', (d) => ctx.cScale(d["properties"][ctx.sqr_c][ctx.currentYearSqr]))
+        .attr("stroke", 'black');
+
+    d3.select("#circG")
+        .selectAll('text')
+        .data(ctx.departements.features)
+        .enter()
+        .append('text')
+        .attr('class', 'sqrDptText')
+        .attr('x', (d) => ctx.xScale(d["properties"][ctx.sqr_x][ctx.currentYearSqr]) + ctx.rScale(d["properties"][ctx.sqr_r][ctx.currentYearSqr]) + 2)
+        .attr('y', (d) => ctx.yScale(d["properties"][ctx.sqr_y][ctx.currentYearSqr]) + 4)
+        .attr('fill', ctx.textColor)
+        .attr('font-size', '12px')
+        .text((d) => d["properties"]['dep']);
+    
+    addTooltip(".sqrDptCirc");
+    setSqrLegendFromCtx();
+}
+
 var createViz = function(){
     console.log("Using D3 v"+d3.version);
     var svgEl = d3.select("#main").append("svg").attr('id','deptMap');
     var svgElSqr = d3.select("#main").append("svg").attr('id','sqrAnim');
+    var svgElPlt = d3.select("#main").append("svg").attr('id','plt');
     svgEl.attr("width", MAP_W);
     svgEl.attr("height", MAP_H);
     svgElSqr.attr("width", SQR_W);
     svgElSqr.attr("height", SQR_H);
-    loadData(svgEl,svgElSqr);
+    svgElPlt.attr("width", PLT_W);
+    svgElPlt.attr("height", PLT_H);
+    loadData(svgEl,svgElSqr,svgElPlt);
 };
 
 
@@ -132,7 +223,7 @@ var createViz = function(){
 //######################################################
 
 
-var loadData = function(svgEl, svgElSqr){
+var loadData = function(svgEl, svgElSqr, svgElPlt){
 
     var promises = [
         d3.json("data/carte_json/a-dep2021.json"),
@@ -167,10 +258,10 @@ var loadData = function(svgEl, svgElSqr){
                     data[0]["features"][i]["properties"]["population"] = data[1][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['population'].length; k++){
-                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" && parseFloat(data[1][j][ctx.dateAvailable['population'][k]]) - parseFloat(ctx.min['population']) < 0){
+                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" && parseFloat(data[1][j][ctx.dateAvailable['population'][k]]) < parseFloat(ctx.min['population'])){
                             ctx.min['population'] = data[1][j][ctx.dateAvailable['population'][k]];
                         };
-                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" &&  parseFloat(data[1][j][ctx.dateAvailable['population'][k]]) - parseFloat(ctx.max['population']) > 0){
+                        if (data[1][j][ctx.dateAvailable['population'][k]] != "" &&  parseFloat(data[1][j][ctx.dateAvailable['population'][k]]) > parseFloat(ctx.max['population'])){
                             ctx.max['population'] = data[1][j][ctx.dateAvailable['population'][k]];
                         }
                     };
@@ -206,7 +297,7 @@ var loadData = function(svgEl, svgElSqr){
                         if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && parseFloat(data[2][j][ctx.dateAvailable['pib'][k]]) < parseFloat(ctx.min['pib'])){
                             ctx.min['pib'] = data[2][j][ctx.dateAvailable['pib'][k]];
                         };
-                        if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && parseFloat(data[2][j][ctx.dateAvailable['pib'][k]]) - parseFloat(ctx.max['pib']) > 0){
+                        if (data[2][j][ctx.dateAvailable['pib'][k]] != '' && parseFloat(data[2][j][ctx.dateAvailable['pib'][k]]) > parseFloat(ctx.max['pib'])){
                             ctx.max['pib'] = data[2][j][ctx.dateAvailable['pib'][k]];
                         }
                     };
@@ -239,10 +330,10 @@ var loadData = function(svgEl, svgElSqr){
                     data[0]["features"][i]["properties"]["esperance"] = data[3][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['esperance'].length; k++){
-                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" && parseFloat(data[3][j][ctx.dateAvailable['esperance'][k]]) - parseFloat(ctx.min['esperance']) < 0){
+                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" && parseFloat(data[3][j][ctx.dateAvailable['esperance'][k]]) < parseFloat(ctx.min['esperance'])){
                             ctx.min['esperance'] = data[3][j][ctx.dateAvailable['esperance'][k]];
                         };
-                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" &&  parseFloat(data[3][j][ctx.dateAvailable['esperance'][k]]) - parseFloat(ctx.max['esperance']) > 0){
+                        if (data[3][j][ctx.dateAvailable['esperance'][k]] != "" &&  parseFloat(data[3][j][ctx.dateAvailable['esperance'][k]]) > parseFloat(ctx.max['esperance'])){
                             ctx.max['esperance'] = data[3][j][ctx.dateAvailable['esperance'][k]];
                         }
                     };
@@ -277,10 +368,10 @@ var loadData = function(svgEl, svgElSqr){
                     data[0]["features"][i]["properties"]["accouchement"] = data[4][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['accouchement'].length; k++){
-                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" && parseFloat(data[4][j][ctx.dateAvailable['accouchement'][k]]) - parseFloat(ctx.min['accouchement']) < 0){
+                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" && parseFloat(data[4][j][ctx.dateAvailable['accouchement'][k]]) < parseFloat(ctx.min['accouchement'])){
                             ctx.min['accouchement'] = data[4][j][ctx.dateAvailable['accouchement'][k]];
                         };
-                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" &&  parseFloat(data[4][j][ctx.dateAvailable['accouchement'][k]]) - parseFloat(ctx.max['accouchement']) > 0){
+                        if (data[4][j][ctx.dateAvailable['accouchement'][k]] != "" &&  parseFloat(data[4][j][ctx.dateAvailable['accouchement'][k]]) > parseFloat(ctx.max['accouchement'])){
                             ctx.max['accouchement'] = data[4][j][ctx.dateAvailable['accouchement'][k]];
                         }
                     };
@@ -314,10 +405,10 @@ var loadData = function(svgEl, svgElSqr){
                     data[0]["features"][i]["properties"]["natalite"] = data[5][j];
                     /*Max and min*/
                     for (let k=0; k<ctx.dateAvailable['natalite'].length; k++){
-                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" && parseFloat(data[5][j][ctx.dateAvailable['natalite'][k]]) - parseFloat(ctx.min['natalite'] < 0)){
+                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" && parseFloat(data[5][j][ctx.dateAvailable['natalite'][k]]) < parseFloat(ctx.min['natalite'])){
                             ctx.min['natalite'] = data[5][j][ctx.dateAvailable['natalite'][k]];
                         };
-                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" &&  parseFloat(data[5][j][ctx.dateAvailable['natalite'][k]]) - parseFloat(ctx.max['natalite'] > 0)){
+                        if (data[5][j][ctx.dateAvailable['natalite'][k]] != "" &&  parseFloat(data[5][j][ctx.dateAvailable['natalite'][k]]) > parseFloat(ctx.max['natalite'])){
                             ctx.max['natalite'] = data[5][j][ctx.dateAvailable['natalite'][k]];
                         }
                     };
@@ -334,21 +425,29 @@ var loadData = function(svgEl, svgElSqr){
         };
 
 
+        // Minmax and maxmin
+        var vars = ['population', 'pib', 'esperance', 'accouchement', 'natalite'];
+        for (let i=0; i<5; i++){
+            if (parseInt(ctx.dateAvailable[vars[i]][0]) > ctx.mindate){
+                ctx.mindate = parseInt(ctx.dateAvailable[vars[i]][0])
+            }
+            if (parseInt(ctx.dateAvailable[vars[i]][ctx.dateAvailable[vars[i]].length - 1]) < ctx.maxdate){
+                ctx.maxdate = parseInt(ctx.dateAvailable[vars[i]][ctx.dateAvailable[vars[i]].length - 1])
+            }
+        }
+        for (let i=ctx.mindate; i<ctx.maxdate + 1; i++){
+            ctx.datesAvailableSqr.push(i.toString());
+        }
+
+        // Logs
+        console.log(data);
+        console.log(ctx);
+
+        //Saving
+        ctx.departements = data[0];
 
         // Exit
-        console.log(data);
-        ctx.departements = data[0];
-        makeMap(svgEl);
-        setMapFromHtml(500);
-        setYearMenu();
-        setMapLegendFromCtx();
-
-        // ColorLegend
-        createColorLegend(svgEl);
-        addTooltip(".dpt");
-
-        // Square
-        initSVGcanvas(svgElSqr);
+        exitDataLoading(svgEl, svgElSqr, svgElPlt);
         
     }).catch(function(error){console.log(error)});
 
@@ -448,7 +547,6 @@ var setMapFromHtml = function(){
     ctx.currentYearMap = ctx.dateAvailable[ctx.currentlyDisplayed][ctx.dateAvailable[ctx.currentlyDisplayed].length - 1];
     setMapFromCtx(ctx.transitionDuration);
     setMapLegendFromCtx();
-    console.log(ctx);
 }
 
 var setMapFromCtx = function(transitionDuration){
@@ -479,6 +577,10 @@ var stopSetMap = function() {
                 return ctx.ndColor;
             }return ctx.mycolor(d["properties"][ctx.currentlyDisplayed ][ctx.currentYearMap])
         });
+    
+    setTooltip(".dpt");
+    setYearMenu();
+    setColorLegend();
 }
 
 
@@ -496,12 +598,12 @@ var addTooltip = function(targetedClass){
     d3.selectAll(targetedClass)
         .append('title')
         .text(function(d){
-            var tooltip = d["properties"]['libgeo']
-            tooltip = tooltip + "\n" + "population" + " : " + d["properties"]["population"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "pib" + " : " + d["properties"]["pib"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "esperance" + " : " + d["properties"]["esperance"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "accouchement" + " : " + d["properties"]["accouchement"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "natalite" + " : " + d["properties"]["natalite"][ctx.currentYearSqr]
+            var tooltip = d["properties"]['libgeo'];
+            tooltip = tooltip + "\n" + "population" + " : " + round(d["properties"]["population"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "pib" + " : " + round(d["properties"]["pib"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "esperance" + " : " + round(d["properties"]["esperance"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "accouchement" + " : " + round(d["properties"]["accouchement"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "natalite" + " : " + round(d["properties"]["natalite"][ctx.currentYearSqr], 2);
             return tooltip
         });
 }
@@ -510,12 +612,12 @@ var setTooltip = function(targetedClass){
     d3.selectAll(targetedClass)
         .select('title')
         .text(function(d){
-            var tooltip = d["properties"]['libgeo']
-            tooltip = tooltip + "\n" + "population" + " : " + d["properties"]["population"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "pib" + " : " + d["properties"]["pib"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "esperance" + " : " + d["properties"]["esperance"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "accouchement" + " : " + d["properties"]["accouchement"][ctx.currentYearSqr]
-            tooltip = tooltip + "\n" + "natalite" + " : " + d["properties"]["natalite"][ctx.currentYearSqr]
+            var tooltip = d["properties"]['libgeo'];
+            tooltip = tooltip + "\n" + "population" + " : " + round(d["properties"]["population"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "pib" + " : " + round(d["properties"]["pib"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "esperance" + " : " + round(d["properties"]["esperance"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "accouchement" + " : " + round(d["properties"]["accouchement"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + "natalite" + " : " + round(d["properties"]["natalite"][ctx.currentYearSqr], 2);
             return tooltip
         });
 }
@@ -545,7 +647,7 @@ var setYearMenu = function() {
         .text((d) => d);
 }
 
-var setYear = function(){
+var setYearMap = function(){
     var select = document.getElementById('selectYear4map');
     setYearFromValue(select.options[select.selectedIndex].value);
 }
@@ -576,54 +678,109 @@ var setMapLegendFromValue = function(value){
 
 
 
+
+
+
+
 //######################################################
-//#################### ANIMATION #######################
+//##################### SQR MENU #######################
 //######################################################
 
-var animer = function(){
+var setYearMenuSqr = function() {
+    d3.select("#selectYear4sqr")
+        .selectAll("option")
+        .remove();
+    
+    d3.select("#selectYear4sqr")
+        .selectAll("option")
+        .data(ctx.datesAvailableSqr)
+        .enter()
+        .append('option')
+        .attr("class","yearOptionSqr")
+        .attr("value",(d) => d)
+        .text((d) => d);
+}
+
+var setYearSqr = function(){
+    var select = document.getElementById('selectYear4sqr');
+    setYearFromValueSqr(select.options[select.selectedIndex].value);
+}
+
+var setYearFromValueSqr = function(value) {
+    ctx.currentYearSqr = value;
+    setSqrLegendFromCtx();
+    setSqrFromCtx(ctx.transitionDuration);
+}
+
+var setSqrLegendFromCtx = function(){
+    setSqrLegendFromValue(ctx.currentYearSqr);
+}
+
+var setSqrLegendFromValue = function(value){
+    d3.select("#currentYearSqr")
+        .text("Year currently displayed on the square : " + value);
+    d3.select("#selectYear4sqr")
+        .property('value', value);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//######################################################
+//################## MAP ANIMATION #####################
+//######################################################
+
+var animerMap = function(){
     d3.select("#setAnimationBtn")
-        .attr("onclick", "stopAnimation();")
+        .attr("onclick", "stopAnimationMap();")
         .attr("value","STOP !");
     
-        /*Initialisation*/
-        ctx.currentYearMap = ctx.dateAvailable[ctx.currentlyDisplayed][0];
-        setMapFromCtx(0);
-        setMapLegendFromCtx();
+    stopAnimationSqr();
+    
+    /*Initialisation*/
+    ctx.currentYearMap = ctx.dateAvailable[ctx.currentlyDisplayed][0];
+    setMapFromCtx(0);
+    setMapLegendFromCtx();
 
-        /*Configuration of the animationMap object*
-        It contains the dates to plot and the delay before each of them*/
-        var dates4animation = ctx.dateAvailable[ctx.currentlyDisplayed]
-        mDate = dates4animation.length
-        range = dates4animation[mDate - 1] - dates4animation[0];
+    /*Configuration of the animationMap object*
+    It contains the dates to plot and the delay before each of them*/
+    var dates4animation = ctx.dateAvailable[ctx.currentlyDisplayed]
+    mDate = dates4animation.length
+    range = dates4animation[mDate - 1] - dates4animation[0];
 
-        animationMap.dates = []; animationLegend.dates = [];
-        animationMap.delays = []; animationLegend.delays = [];
-        animationMap.len = mDate - 1; animationLegend.len = range;
-        animationMap.ongoing = true; animationLegend.ongoing = true;
+    animationMap.dates = []; animationLegend.dates = [];
+    animationMap.delays = []; animationLegend.delays = [];
+    animationMap.len = mDate - 1; animationLegend.len = range;
+    animationMap.ongoing = true; animationLegend.ongoing = true;
 
-        for (let i=1; i<mDate; i++){
-            animationMap.dates.push(dates4animation[i]);
-            animationMap.delays.push(ctx.animationDuration*(dates4animation[i] - dates4animation[i-1])/range);
-        }
+    for (let i=1; i<mDate; i++){
+        animationMap.dates.push(dates4animation[i]);
+        animationMap.delays.push(ctx.animationDuration*(dates4animation[i] - dates4animation[i-1])/range);
+    }
 
-        for (let i=1;i<range+1; i++){
-            animationLegend.dates.push(parseInt(dates4animation[0]) + i);
-            animationLegend.delays.push(ctx.animationDuration/range);
-        }
+    for (let i=1;i<range+1; i++){
+        animationLegend.dates.push(parseInt(dates4animation[0]) + i);
+        animationLegend.delays.push(ctx.animationDuration/range);
+    }
 
-        /*The animation*/
-        console.log(animationMap);
-        console.log(animationLegend);
-        nextStepAnimationMap(0);
-        nextStepAnimationLegend(0);
+    /*The animation*/
+    nextStepAnimationMap(0);
+    nextStepAnimationLegend(0);
 } 
 
-var stopAnimation = function(){
+var stopAnimationMap = function(){
     d3.select("#setAnimationBtn")
-        .attr("onclick", "animer();")
+        .attr("onclick", "animerMap();")
         .attr("value","Animer >");
     setMapLegendFromCtx();
-    console.log(ctx.currentYearMap);
     animationMap.ongoing = false;
     animationLegend.ongoing = false;
     stopSetMap();
@@ -632,7 +789,6 @@ var stopAnimation = function(){
 var nextStepAnimationMap = function(index){
     setTimeout(function(){
         if (animationMap.ongoing){
-            console.log("Entering Map Animation");
             ctx.currentYearMap = animationMap.dates[index];
             setMapFromCtx(animationMap.delays[index]);
             if (index != animationMap.len - 1){
@@ -648,7 +804,6 @@ var nextStepAnimationMap = function(index){
 var nextStepAnimationLegend = function(index){
     setTimeout(function(){
         if (animationLegend.ongoing){
-            console.log("Entering Legend Animation");
             setMapLegendFromValue(animationLegend.dates[index]);
             if (index != animationLegend.len - 1){
                 nextStepAnimationLegend(index + 1);
@@ -683,7 +838,7 @@ var initSVGcanvas = function(svgElSqr){
 
     // scale for x-axis
     ctx.xScale = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.sqr_x]), parseFloat(ctx.max[ctx.sqr_x])])
-                                 .range([80, SQR_W-20]);
+                                 .range([80, SQR_W-100]);
     // scale for y-axis
     ctx.yScale = d3.scaleLinear().domain([parseFloat(ctx.min[ctx.sqr_y]), parseFloat(ctx.max[ctx.sqr_y])])
                                  .range([SQR_H-60, 20]);
@@ -724,35 +879,331 @@ var initSVGcanvas = function(svgElSqr){
       .classed("axisLb", true)
       .text(ctx.sqr_y);
     
-    
-    setSqrFromCtx();
+    addCircles();
 }
 
 
 //######################################################
-//################ SQR POPULATION ######################
+//###################### SET SQR #######################
 //######################################################
 
-var deptTranslator = function(x_value, y_value){
-    return `translate(${ctx.xScale(x_value)},${ctx.yScale(y_value)})`;
-}
-
-var setSqrFromCtx = function(){
-    d3.selectAll(".sqrDptCirc")
-        .remove()
-
+var setSqrFromCtx = function(movingCirclesDuration){
     d3.select("#circG")
         .selectAll('circle')
-        .data(ctx.departements.features)
-        .enter()
-        .append("circle")
+        .transition("movingCircles")
+        .duration(movingCirclesDuration)
         .attr('class', 'sqrDptCirc')
         .attr('cx', (d) => ctx.xScale(d["properties"][ctx.sqr_x][ctx.currentYearSqr]))
         .attr('cy', (d) => ctx.yScale(d["properties"][ctx.sqr_y][ctx.currentYearSqr]))
         .attr('r', (d) => ctx.rScale(d["properties"][ctx.sqr_r][ctx.currentYearSqr]))
         .attr('fill', (d) => ctx.cScale(d["properties"][ctx.sqr_c][ctx.currentYearSqr]))
-        .attr("stroke", 'black')
+        .attr("stroke", 'black');
+
+    d3.select("#circG")
+        .selectAll('text')
+        .transition("movingCircles")
+        .duration(movingCirclesDuration)
+        .attr('class', 'sqrDptText')
+        .attr('x', (d) => ctx.xScale(d["properties"][ctx.sqr_x][ctx.currentYearSqr]) + ctx.rScale(d["properties"][ctx.sqr_r][ctx.currentYearSqr]) + 2)
+        .attr('y', (d) => ctx.yScale(d["properties"][ctx.sqr_y][ctx.currentYearSqr]) + 4);
     
-    addTooltip(".sqrDptCirc");
+    setTooltip(".sqrDptCirc");
 };
 
+var setSqrFromHtml = function(){
+    ctx.currentYearMap = ctx.dateAvailable[ctx.currentlyDisplayed][ctx.dateAvailable[ctx.currentlyDisplayed].length - 1];
+    setMapFromCtx(ctx.transitionDuration);
+    setMapLegendFromCtx();
+}
+
+var stopSetSqr = function() {
+    
+    d3.select("#circG")
+        .selectAll('circle')
+        .interrupt("movingCircles")
+        .attr('class', 'sqrDptCirc')
+        .attr('cx', (d) => ctx.xScale(d["properties"][ctx.sqr_x][ctx.currentYearSqr]))
+        .attr('cy', (d) => ctx.yScale(d["properties"][ctx.sqr_y][ctx.currentYearSqr]))
+        .attr('r', (d) => ctx.rScale(d["properties"][ctx.sqr_r][ctx.currentYearSqr]))
+        .attr('fill', (d) => ctx.cScale(d["properties"][ctx.sqr_c][ctx.currentYearSqr]))
+        .attr("stroke", 'black');
+    
+    setTooltip(".sqrDptCirc");
+}
+
+
+
+
+
+
+
+
+//######################################################
+//################## SQR ANIMATION #####################
+//######################################################
+
+var animerSqr = function(){
+    d3.select("#setAnimationSqrBtn")
+        .attr("onclick", "stopAnimationSqr();")
+        .attr("value","STOP !");
+    
+    stopAnimationMap();
+
+    /*Initialisation*/
+    ctx.currentYearSqr = ctx.dateAvailable[ctx.currentlyDisplayed][0];
+    setSqrFromCtx(0);
+    setSqrLegendFromCtx();
+
+    /*Configuration of the animationMap object*
+    It contains the dates to plot and the delay before each of them*/
+    var dates4animation = ctx.datesAvailableSqr
+    mDate = dates4animation.length
+    range = dates4animation[mDate - 1] - dates4animation[0];
+
+    animationSqr.dates = []; animationLegendSqr.dates = [];
+    animationSqr.delays = []; animationLegendSqr.delays = [];
+    animationSqr.len = mDate - 1; animationLegendSqr.len = range;
+    animationSqr.ongoing = true; animationLegendSqr.ongoing = true;
+
+    for (let i=1; i<mDate; i++){
+        animationSqr.dates.push(dates4animation[i]);
+        animationSqr.delays.push(ctx.animationDurationSqr*(dates4animation[i] - dates4animation[i-1])/range);
+    }
+
+    for (let i=1;i<range+1; i++){
+        animationLegendSqr.dates.push(parseInt(dates4animation[0]) + i);
+        animationLegendSqr.delays.push(ctx.animationDurationSqr/range);
+    }
+
+    /*The animation*/
+    nextStepAnimationSqr(0);
+    nextStepAnimationLegendSqr(0);
+} 
+
+var stopAnimationSqr = function(){
+    d3.select("#setAnimationSqrBtn")
+        .attr("onclick", "animerSqr();")
+        .attr("value","Animer >");
+    setSqrLegendFromCtx();
+    animationSqr.ongoing = false;
+    animationLegendSqr.ongoing = false;
+    stopSetSqr();
+}
+
+var nextStepAnimationSqr = function(index){
+    setTimeout(function(){
+        if (animationSqr.ongoing){
+            ctx.currentYearSqr = animationSqr.dates[index];
+            setSqrFromCtx(animationSqr.delays[index]);
+            if (index != animationSqr.len - 1){
+                nextStepAnimationSqr(index + 1);
+            }
+            else{
+                animationSqr.ongoing = false;
+            }
+        }
+    }, 0.8*animationSqr.delays[index])
+}
+
+var nextStepAnimationLegendSqr = function(index){
+    setTimeout(function(){
+        if (animationLegendSqr.ongoing){
+            setSqrLegendFromValue(animationLegendSqr.dates[index]);
+            if (index != animationLegendSqr.len - 1){
+                nextStepAnimationLegendSqr(index + 1);
+            }
+            else{
+                animationLegendSqr.ongoing = false;
+            }
+        }
+    }, 0.8*animationLegendSqr.delays[index])
+}
+
+
+
+
+
+
+
+//######################################################
+//#################### LEGEND SQR ######################
+//######################################################
+
+
+var createColorLegendSqr = function(svgElSqr){
+    var valueRange4legend = d3.range(ctx.min[ctx.sqr_c],ctx.max[ctx.sqr_c], (ctx.max[ctx.sqr_c] - ctx.min[ctx.sqr_c]) / 300).reverse();
+    var scale4colorLegend = d3.scaleLinear().domain([ctx.min[ctx.sqr_c], ctx.max[ctx.sqr_c]]).rangeRound([valueRange4legend.length,0]);
+
+    var legendG = svgElSqr.append("g")
+        .attr("id", "colorLegendSqr")
+        .attr("opacity", 1)
+        .attr("transform", "translate("+ (SQR_W - 80).toString() +",0)");
+    
+    legendG.selectAll("line")
+        .data(valueRange4legend)
+        .enter()
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", (d,j) => (j))
+        .attr("x2", 10)
+        .attr("y2", (d,j) => (j))
+        .attr("stroke", (d) => (ctx.cScale(d)));
+    legendG.append("g")
+        .attr("transform", `translate(${10+4},0)`)
+        .call(d3.axisRight(scale4colorLegend).ticks(5));
+    legendG.append("text")
+        .attr("x", 0)
+        .attr("y", valueRange4legend.length+25)
+        .text(ctx.sqr_c);
+}
+
+
+var createCircleLegendSqr = function(svgElSqr){
+    var legendG = svgElSqr.append("g")
+        .attr("id", "circleLegendSqr")
+        .attr("opacity", 1);
+
+    legendG.append("circle")
+        .attr("class","circleLegendItem")
+        .attr('r', ctx.rScale(ctx.max[ctx.sqr_r]))
+        .attr('cx', SQR_W - 70)
+        .attr('cy', 380)
+        .attr("fill","white")
+        .attr("stroke","black");
+    
+    legendG.append("text")
+        .attr("class","circleLegendItem")
+        .attr('x', SQR_W - 45)
+        .attr('y', 384)
+        .attr('fill','black')
+        .attr('font-size', '12px')
+        .text(round(ctx.max[ctx.sqr_r], -3));
+    
+    legendG.append("circle")
+        .attr("class","circleLegendItem")
+        .attr('r', (ctx.rScale(ctx.min[ctx.sqr_r]) + ctx.rScale(ctx.max[ctx.sqr_r])) / 2)
+        .attr('cx', SQR_W - 70)
+        .attr('cy', 420)
+        .attr("fill","white")
+        .attr("stroke","black");
+
+    legendG.append("text")
+        .attr("class","circleLegendItem")
+        .attr('x', SQR_W - 45)
+        .attr('y', 424)
+        .attr('fill','black')
+        .attr('font-size', '12px')
+        .text(round((parseFloat(ctx.min[ctx.sqr_r]) + parseFloat(ctx.max[ctx.sqr_r])) / 2.0, -3));
+    
+    legendG.append("circle")
+        .attr("class","circleLegendItem")
+        .attr('r', ctx.rScale(ctx.min[ctx.sqr_r]))
+        .attr('cx', SQR_W - 70)
+        .attr('cy', 460)
+        .attr("fill","white")
+        .attr("stroke","black");
+    
+    legendG.append("text")
+        .attr("class","circleLegendItem")
+        .attr('x', SQR_W - 45)
+        .attr('y', 464)
+        .attr('fill','black')
+        .attr('font-size', '12px')
+        .text(round(ctx.min[ctx.sqr_r], -3));
+    
+    legendG.append("text")
+        .attr("class","circleLegendItem")
+        .attr('x', SQR_W - 80)
+        .attr('y', 504)
+        .text(ctx.sqr_r);
+}
+
+
+
+
+
+
+
+
+
+
+
+//######################################################
+//################## SCATTERED PLOT ####################
+//######################################################
+
+var getBounds4plt = function(variable) {
+    min_ = Infinity;
+    max_ = 0;
+    var properties = ctx.departements.features[ctx.toPlt]['properties']
+    m = ctx.dateAvailable[variable].length;
+
+    for (let i = parseInt(ctx.dateAvailable[variable][0]); i< parseInt(ctx.dateAvailable[variable][m-1]) + 1; i++){
+        if (parseFloat(properties[i.toString()]) < min_){
+            min_ = parseFloat(properties[i.toString()]);
+        }
+        if (parseFloat(properties[i.toString()]) > max_){
+            max_ = parseFloat(properties[i.toString()]);
+        }
+    }
+
+    return [min_, max_];
+}
+
+
+var initSVGcanvasPlt = function(svgElPlt){
+
+    // a SVG group for background elements (axes, labels)
+    svgElPlt.append("g").attr("id", "bkgGPlt");
+
+    // a SVG group for points
+    svgElPlt.append("g").attr("id", "pointsGPlt");
+
+    // scale for x-axis
+    ctx.xScalePlt = d3.scaleLinear().domain([ctx.minYear, 2021])
+                                .range([0, PLT_W-20]);
+    
+    // scale 1 for y-axis
+    ctx.yScalePopulation = d3.scaleLinear().domain(getBounds4plt('population'))
+                                 .range([PLT_H-60, 20]);
+    
+    // scale 2 for y-axis
+    ctx.yScalePib = d3.scaleLinear().domain(getBounds4plt('pib'))
+                                 .range([PLT_H-60, 20]);
+                    
+    // scale 3 for y-axis
+    ctx.yScaleEsperance = d3.scaleLinear().domain(getBounds4plt('esperance'))
+                                 .range([PLT_H-60, 20]);
+                    
+    // scale 4 for y-axis
+    ctx.yScalePib = d3.scaleLinear().domain(getBounds4plt('accouchement'))
+                                 .range([PLT_H-60, 20]);
+
+    // scale 5 for y-axis
+    ctx.yScalePib = d3.scaleLinear().domain(getBounds4plt('natalite'))
+                                 .range([PLT_H-60, 20]);
+
+    
+    // x- and y- axes
+    d3.select("#bkgGPlt").append("g")
+      .attr("transform", `translate(0,${PLT_H-50})`)
+      .call(d3.axisBottom(ctx.xScale).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "middle");
+    // x-axis label
+    d3.select("#bkgGPlt")
+      .append("text")
+      .attr("y", PLT_H - 12)
+      .attr("x", PLT_W/2)
+      .classed("axisLb", true)
+      .text(ctx.sqr_x);
+    // y-axis label
+    d3.select("#bkgGPlt")
+      .append("text")
+      .attr("y", 0)
+      .attr("x", 0)
+      .attr("transform", `rotate(-90) translate(-${3*SQR_H/4},18)`)
+      .classed("axisLb", true)
+      .text("Passer la souris sur un point pour voir la valeur");
+    
+}
