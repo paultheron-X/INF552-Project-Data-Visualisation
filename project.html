@@ -9,22 +9,6 @@
         <!-- Your code -->
         <script type="text/javascript" src="js/main.js"></script>
 <style type="text/css">
-.country {
-  fill: white;
-  stroke: #CCC;
-  vector-effect: non-scaling-stroke;
-}
-
-.river {
-  fill: none;
-  stroke: #4e76b4;
-  vector-effect: non-scaling-stroke;
-}
-
-.lake {
-  fill: #4e76b4;
-  stroke: none;
-}
 
 svg {
     display: block;
@@ -44,19 +28,17 @@ svg {
                 <div id='mapControl'>
                     <p>MAP MENU</p>
                     <form style="margin:10%" id='mapForm'>
-                        <select id="data4map" name="data4map">
+                        <select id="data4map" name="data4map" onchange="setMapFromHtml();">
                           <option value="population">Population</option>
                           <option value="pib">PIB par habitant</option>
                           <option value="esperance">Éspérance de vie</option>
                           <option value="natalite">Taux de natalité</option>
                           <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
                         </select>
-                        <input type="button" value="Set" onclick="setMapFromHtml();" id="setDataBtn"/>
 
-                        <select name="years" id="selectYear4map">
+                        <select name="years" id="selectYear4map" onchange="setYearMap();">
                           <option value="2021" class = "yearOption">YYYY</option>
                         </select>
-                        <input type="button" value="Set" onclick="setYearMap();" id="setYearBtn"/>
 
                         </br>
                         </br>
@@ -85,12 +67,24 @@ svg {
                     </br>
                     </br>
                     </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
+                    </br>
                     <p>SQR MENU</p>
                     <form style="margin:10%" id='sqrForm'>
-                        <select name="years4sqr" id="selectYear4sqr">
+                        <select name="years4sqr" id="selectYear4sqr" onchange="setYearSqr();">
                           <option value="2021" class = "yearOption">YYYY</option>
                         </select>
-                        <input type="button" value="Set" onclick="setYearSqr();" id="setYearBtn"/>
 
                         </br>
                         </br>
@@ -100,6 +94,33 @@ svg {
                       </form>
                       <p id="currentYearSqr"></p>
                   </div>
+
+
+                  <div id='pltControl'>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  </br>
+                  <p>PLT MENU</p>
+                  <form style="margin:10%" id='pltForm'>
+                      <select name="dep4plt" id="dep4plt" onchange="setPltFromHtml();">
+                        <option value="ain" class = "dptOption">YYYY</option>
+                      </select>
+                    </br>
+                    </form>
+                    <p id="currentPlt"></p>
             </div>
         </div>
 

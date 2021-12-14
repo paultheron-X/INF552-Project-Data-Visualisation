@@ -4,7 +4,7 @@
 //######################################################
 
 
-const MAP_W = 960;
+const MAP_W = 700;
 const MAP_H = 600;
 const SQR_W = 960;
 const SQR_H = 600;
@@ -41,7 +41,8 @@ var ctx = {
     maxdate:Infinity,
     datesAvailableSqr:[],
     animationDurationSqr: 20000,
-    toPlt: 12,
+    toPlt: 84,
+    pltColor: {population:'red', pib:'blue', esperance: 'green', accouchement:'orange', natalite: 'purple'},
 };
 
 var animationMap = {
@@ -130,6 +131,7 @@ var exitDataLoading = function(svgEl, svgElSqr, svgElPlt){
 
     // Scattered plot
     initSVGcanvasPlt(svgElPlt);
+    setPltFromCtx();
 }
 
 
@@ -245,7 +247,7 @@ var loadData = function(svgEl, svgElSqr, svgElPlt){
         /*POPULATION*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[1][0]).length;i++) {
-            if (isNumeric(Object.keys(data[1][0])[i]) && Object.keys(data[1][0])[i] >= ctx.minYear){
+            if (isNumeric(Object.keys(data[1][0])[i]) && isNumeric(data[1][0][Object.keys(data[1][0])[i]]) && Object.keys(data[1][0])[i] >= ctx.minYear){
                 ctx.dateAvailable["population"].push(Object.keys(data[1][0])[i]);
             }
         }
@@ -281,7 +283,7 @@ var loadData = function(svgEl, svgElSqr, svgElPlt){
         /*PIB*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[2][0]).length;i++) {
-            if (isNumeric(Object.keys(data[2][0])[i]) && Object.keys(data[2][0])[i] >= ctx.minYear){
+            if (isNumeric(Object.keys(data[2][0])[i]) && isNumeric(data[2][0][Object.keys(data[2][0])[i]]) && Object.keys(data[2][0])[i] >= ctx.minYear){
                 ctx.dateAvailable['pib'].push(Object.keys(data[2][0])[i]);
             }
         }
@@ -317,7 +319,7 @@ var loadData = function(svgEl, svgElSqr, svgElPlt){
         /*ESPERANCE DE VIE*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[3][0]).length;i++) {
-            if (isNumeric(Object.keys(data[3][0])[i]) && Object.keys(data[3][0])[i] >= ctx.minYear){
+            if (isNumeric(Object.keys(data[3][0])[i]) && isNumeric(data[3][0][Object.keys(data[3][0])[i]]) && Object.keys(data[3][0])[i] >= ctx.minYear){
                 ctx.dateAvailable['esperance'].push(Object.keys(data[3][0])[i]);
             }
         }
@@ -355,7 +357,7 @@ var loadData = function(svgEl, svgElSqr, svgElPlt){
         /*ACCOUCHEMENT*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[4][0]).length;i++) {
-            if (isNumeric(Object.keys(data[4][0])[i]) && Object.keys(data[4][0])[i] >= ctx.minYear){
+            if (isNumeric(Object.keys(data[4][0])[i]) && isNumeric(data[4][0][Object.keys(data[4][0])[i]]) && Object.keys(data[4][0])[i] >= ctx.minYear){
                 ctx.dateAvailable['accouchement'].push(Object.keys(data[4][0])[i]);
             }
         }
@@ -392,7 +394,7 @@ var loadData = function(svgEl, svgElSqr, svgElPlt){
         /*NATALITE*/
         /*Getting the dates of the data*/
         for (let i=0;i<Object.keys(data[5][0]).length;i++) {
-            if (isNumeric(Object.keys(data[5][0])[i]) && Object.keys(data[5][0])[i] >= ctx.minYear){
+            if (isNumeric(Object.keys(data[5][0])[i]) && isNumeric(data[5][0][Object.keys(data[5][0])[i]]) && Object.keys(data[5][0])[i] >= ctx.minYear){
                 ctx.dateAvailable['natalite'].push(Object.keys(data[5][0])[i]);
             }
         }
@@ -1135,19 +1137,20 @@ var createCircleLegendSqr = function(svgElSqr){
 var getBounds4plt = function(variable) {
     min_ = Infinity;
     max_ = 0;
-    var properties = ctx.departements.features[ctx.toPlt]['properties']
+    var properties = ctx.departements.features[ctx.toPlt]['properties'][variable];
     m = ctx.dateAvailable[variable].length;
 
     for (let i = parseInt(ctx.dateAvailable[variable][0]); i< parseInt(ctx.dateAvailable[variable][m-1]) + 1; i++){
-        if (parseFloat(properties[i.toString()]) < min_){
-            min_ = parseFloat(properties[i.toString()]);
+        if (parseFloat(properties[i]) < min_){
+            min_ = parseFloat(properties[i]);
         }
-        if (parseFloat(properties[i.toString()]) > max_){
-            max_ = parseFloat(properties[i.toString()]);
+        if (parseFloat(properties[i]) > max_){
+            max_ = parseFloat(properties[i]);
         }
     }
 
-    return [min_, max_];
+    // return [0.98*min_, 1.02*max_];
+    return [0.98*ctx.min[variable], 1.02*ctx.max[variable]];
 }
 
 
@@ -1161,33 +1164,36 @@ var initSVGcanvasPlt = function(svgElPlt){
 
     // scale for x-axis
     ctx.xScalePlt = d3.scaleLinear().domain([ctx.minYear, 2021])
-                                .range([0, PLT_W-20]);
+                                .range([175, PLT_W-120]);
     
+    
+    // y-sclae
+    ctx.yScalePlt = {};
     // scale 1 for y-axis
-    ctx.yScalePopulation = d3.scaleLinear().domain(getBounds4plt('population'))
-                                 .range([PLT_H-60, 20]);
+    ctx.yScalePlt['population'] = d3.scaleLinear().domain(getBounds4plt('population'))
+                                 .range([PLT_H-100, 20]);
     
     // scale 2 for y-axis
-    ctx.yScalePib = d3.scaleLinear().domain(getBounds4plt('pib'))
-                                 .range([PLT_H-60, 20]);
+    ctx.yScalePlt['pib'] = d3.scaleLinear().domain(getBounds4plt('pib'))
+                                 .range([PLT_H-100, 20]);
                     
     // scale 3 for y-axis
-    ctx.yScaleEsperance = d3.scaleLinear().domain(getBounds4plt('esperance'))
-                                 .range([PLT_H-60, 20]);
+    ctx.yScalePlt['esperance'] = d3.scaleLinear().domain(getBounds4plt('esperance'))
+                                 .range([PLT_H-100, 20]);
                     
     // scale 4 for y-axis
-    ctx.yScalePib = d3.scaleLinear().domain(getBounds4plt('accouchement'))
-                                 .range([PLT_H-60, 20]);
+    ctx.yScalePlt['accouchement'] = d3.scaleLinear().domain(getBounds4plt('accouchement'))
+                                 .range([PLT_H-100, 20]);
 
     // scale 5 for y-axis
-    ctx.yScalePib = d3.scaleLinear().domain(getBounds4plt('natalite'))
-                                 .range([PLT_H-60, 20]);
+    ctx.yScalePlt['natalite'] = d3.scaleLinear().domain(getBounds4plt('natalite'))
+                                 .range([PLT_H-100, 20]);
 
     
-    // x- and y- axes
+    // x-axis
     d3.select("#bkgGPlt").append("g")
-      .attr("transform", `translate(0,${PLT_H-50})`)
-      .call(d3.axisBottom(ctx.xScale).ticks(10))
+      .attr("transform", `translate(0,${PLT_H-80})`)
+      .call(d3.axisBottom(ctx.xScalePlt).ticks(10))
       .selectAll("text")
       .style("text-anchor", "middle");
     // x-axis label
@@ -1196,14 +1202,175 @@ var initSVGcanvasPlt = function(svgElPlt){
       .attr("y", PLT_H - 12)
       .attr("x", PLT_W/2)
       .classed("axisLb", true)
-      .text(ctx.sqr_x);
-    // y-axis label
+      .text("Années");
+
+    // y-axis 1
+    d3.select("#bkgGPlt").append("g")
+      .attr("transform", "translate(55,0)")
+      .call(d3.axisLeft(ctx.yScalePlt['population']).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "end");
+    d3.select("#bkgGPlt")
+        .append("text")
+        .attr("x", -330)
+        .attr('y', 400)
+        .attr("transform", `rotate(-45) translate(0,0)`)
+        .attr("font-size","13px")
+        .style("fill", ctx.pltColor['population'])
+        .style("text-anchor", "end")
+        .classed("axisLb", true)
+        .text("Population");
+
+    // y-axis 2
+    d3.select("#bkgGPlt").append("g")
+      .attr("transform", "translate(110,0)")
+      .call(d3.axisLeft(ctx.yScalePlt['pib']).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "end");
     d3.select("#bkgGPlt")
       .append("text")
-      .attr("y", 0)
-      .attr("x", 0)
-      .attr("transform", `rotate(-90) translate(-${3*SQR_H/4},18)`)
+      .attr("x", -291)
+      .attr('y', 439)
+      .attr("transform", `rotate(-45) translate(0,0)`)
+      .attr("font-size","13px")
+      .style("fill", ctx.pltColor['pib'])
+      .style("text-anchor", "end")
       .classed("axisLb", true)
-      .text("Passer la souris sur un point pour voir la valeur");
+      .text("PIB");
+
+    // y-axis 3
+    d3.select("#bkgGPlt").append("g")
+      .attr("transform", "translate(165,0)")
+      .call(d3.axisLeft(ctx.yScalePlt['esperance']).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "end");
+    d3.select("#bkgGPlt")
+      .append("text")
+      .attr("x", -252)
+      .attr('y', 478)
+      .attr("transform", `rotate(-45) translate(0,0)`)
+      .attr("font-size","13px")
+      .style("fill", ctx.pltColor['esperance'])
+      .style("text-anchor", "end")
+      .classed("axisLb", true)
+      .text("Espérance");
+    // y-axis 4
+    d3.select("#bkgGPlt").append("g")
+      .attr("transform", `translate(${PLT_W-110},0)`)
+      .call(d3.axisRight(ctx.yScalePlt['accouchement']).ticks(10))
+      .selectAll("text")
+      .style("text-anchor", "start");
+    d3.select("#bkgGPlt")
+      .append("text")
+      .attr("x", 965)
+      .attr('y', -235)
+      .attr("transform", `rotate(45) translate(0,0)`)
+      .attr("font-size","13px")
+      .style("fill", ctx.pltColor['accouchement'])
+      .style("text-anchor", "start")
+      .classed("axisLb", true)
+      .text("Accouchement");
+    // y-axis 5
+    d3.select("#bkgGPlt").append("g")
+    .attr("transform", `translate(${PLT_W-55},0)`)
+    .call(d3.axisRight(ctx.yScalePlt['natalite']).ticks(10))
+    .selectAll("text")
+    .style("text-anchor", "start");
+    d3.select("#bkgGPlt")
+      .append("text")
+      .attr("x", 1004)
+      .attr('y', -274)
+      .attr("transform", `rotate(45) translate(0,0)`)
+      .attr("font-size","13px")
+      .style("fill", ctx.pltColor['natalite'])
+      .style("text-anchor", "start")
+      .classed("axisLb", true)
+      .text("Natalité");
+
+
+    // options
+    d3.select("#dep4plt")
+        .selectAll('option')
+        .remove()
+    for (let i=0; i<ctx.departements["features"].length; i++){
+        d3.select('#dep4plt')
+            .append('option')
+            .attr('class', 'depOption')
+            .attr('value', i.toString())
+            .text(ctx.departements["features"][i]['properties']['dep'] + ' : ' + ctx.departements["features"][i]['properties']['libgeo'])
+    }
+    d3.select('#dep4plt')
+        .property('value', ctx.toPlt);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//######################################################
+//##################### SET PLOT #######################
+//######################################################
+
+var setPltFromHtml = function(){
+    ctx.toPlt = document.querySelector('#dep4plt').value;
+    setPltFromCtx();
+}
+
+var setPltFromCtx = function(){
+    //remove old
+    d3.select('#pointsGPlt')
+        .selectAll('circle')
+        .remove();
     
+    d3.select('#pointsGPlt')
+        .selectAll('line')
+        .remove();
+
+    var mVariables = 5;
+    var variables = ['population', 'pib', 'esperance', 'accouchement', 'natalite'];
+
+    for (let i=0; i<mVariables; i++){
+        var current = variables[i];
+        mCurrent = ctx.dateAvailable[current].length;
+        firstYear = parseInt(ctx.dateAvailable[current][0])
+
+        var haveToDrawALine = false;
+
+        for (let year=firstYear; year<firstYear + mCurrent; year++){
+            var d = ctx.departements['features'][ctx.toPlt]['properties'][current][year]
+            d3.select('#pointsGPlt')
+                .append('circle')
+                .attr('r',3)
+                .attr('cx', ctx.xScalePlt(year))
+                .attr('cy', ctx.yScalePlt[current](d))
+                .attr('fill', ctx.pltColor[current])
+                .append('title')
+                .text(current + ' : ' + d);
+
+            //draw the line
+            if (haveToDrawALine){
+                var d_old = ctx.departements['features'][ctx.toPlt]['properties'][current][year - 1]
+                d3.select('#pointsGPlt')
+                    .append('line')
+                    .attr('x1', ctx.xScalePlt(year - 1))
+                    .attr('x2', ctx.xScalePlt(year))
+                    .attr('y1', ctx.yScalePlt[current](d_old))
+                    .attr('y2', ctx.yScalePlt[current](d))
+                    .style('stroke', ctx.pltColor[current])
+            }
+
+            // update haveToDrawALine
+            haveToDrawALine = true;
+        }
+    }
 }
