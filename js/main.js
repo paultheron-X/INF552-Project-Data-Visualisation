@@ -13,7 +13,7 @@ const PLT_H = 600;
 
 
 var ctx = {
-    undefinedColor: "#AAA",
+    reprVar: {population:'Population', pib:'PIB', esperance:'Espérance', accouchement: 'Accouchement', natalite: 'Natalité'},
     YEAR: "2015",
     panZoomMode: true,
     animationDuration: 2000,
@@ -72,6 +72,40 @@ var animationLegendSqr = {
     delays: [],
     len: 0,
 }
+
+
+
+
+
+
+
+//######################################################
+//##################### CREATE VIZ #####################
+//######################################################
+
+var createViz = function(){
+    console.log("Using D3 v"+d3.version);
+    // MAP
+    var svgEl = d3.select("#mapSvgArea").append("svg").attr('id','deptMap')
+        .style('margin','50px auto');
+    svgEl.attr("width", MAP_W);
+    svgEl.attr("height", MAP_H);
+    // SQR
+    var svgElSqr = d3.select("#sqrSvgArea").append("svg").attr('id','sqrAnim')
+        .style('margin','50px auto');
+    svgElSqr.attr("width", SQR_W);
+    svgElSqr.attr("height", SQR_H);
+    // PLT
+    var svgElPlt = d3.select("#pltSvgArea").append("svg").attr('id','plt')
+        .style('margin','50px auto');
+    svgElPlt.attr("width", PLT_W);
+    svgElPlt.attr("height", PLT_H);
+    // Data
+    loadData(svgEl,svgElSqr,svgElPlt);
+};
+
+
+
 
 
 
@@ -196,20 +230,6 @@ var addCircles = function(){
     addTooltip(".sqrDptCirc");
     setSqrLegendFromCtx();
 }
-
-var createViz = function(){
-    console.log("Using D3 v"+d3.version);
-    var svgEl = d3.select("#main").append("svg").attr('id','deptMap');
-    var svgElSqr = d3.select("#main").append("svg").attr('id','sqrAnim');
-    var svgElPlt = d3.select("#main").append("svg").attr('id','plt');
-    svgEl.attr("width", MAP_W);
-    svgEl.attr("height", MAP_H);
-    svgElSqr.attr("width", SQR_W);
-    svgElSqr.attr("height", SQR_H);
-    svgElPlt.attr("width", PLT_W);
-    svgElPlt.attr("height", PLT_H);
-    loadData(svgEl,svgElSqr,svgElPlt);
-};
 
 
 
@@ -493,7 +513,7 @@ var createColorLegend = function(svgEl){
     legendG.append("text")
         .attr("x", 0)
         .attr("y", valueRange4legend.length+25)
-        .text(ctx.currentlyDisplayed);
+        .text(ctx.reprVar[ctx.currentlyDisplayed]);
 }
 
 var setColorLegend = function() {
@@ -601,11 +621,11 @@ var addTooltip = function(targetedClass){
         .append('title')
         .text(function(d){
             var tooltip = d["properties"]['libgeo'];
-            tooltip = tooltip + "\n" + "population" + " : " + round(d["properties"]["population"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "pib" + " : " + round(d["properties"]["pib"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "esperance" + " : " + round(d["properties"]["esperance"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "accouchement" + " : " + round(d["properties"]["accouchement"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "natalite" + " : " + round(d["properties"]["natalite"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["population"] + " : " + round(d["properties"]["population"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["pib"] + " : " + round(d["properties"]["pib"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["esperance"] + " : " + round(d["properties"]["esperance"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["accouchement"] + " : " + round(d["properties"]["accouchement"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["natalite"] + " : " + round(d["properties"]["natalite"][ctx.currentYearSqr], 2);
             return tooltip
         });
 }
@@ -615,11 +635,11 @@ var setTooltip = function(targetedClass){
         .select('title')
         .text(function(d){
             var tooltip = d["properties"]['libgeo'];
-            tooltip = tooltip + "\n" + "population" + " : " + round(d["properties"]["population"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "pib" + " : " + round(d["properties"]["pib"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "esperance" + " : " + round(d["properties"]["esperance"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "accouchement" + " : " + round(d["properties"]["accouchement"][ctx.currentYearSqr], 2);
-            tooltip = tooltip + "\n" + "natalite" + " : " + round(d["properties"]["natalite"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["population"] + " : " + round(d["properties"]["population"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["pib"] + " : " + round(d["properties"]["pib"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["esperance"] + " : " + round(d["properties"]["esperance"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["accouchement"] + " : " + round(d["properties"]["accouchement"][ctx.currentYearSqr], 2);
+            tooltip = tooltip + "\n" + ctx.reprVar["natalite"] + " : " + round(d["properties"]["natalite"][ctx.currentYearSqr], 2);
             return tooltip
         });
 }
@@ -871,7 +891,7 @@ var initSVGcanvas = function(svgElSqr){
       .attr("y", SQR_H - 12)
       .attr("x", SQR_W/2)
       .classed("axisLb", true)
-      .text(ctx.sqr_x);
+      .text(ctx.reprVar[ctx.sqr_x]);
     // y-axis label
     d3.select("#bkgG")
       .append("text")
@@ -879,7 +899,7 @@ var initSVGcanvas = function(svgElSqr){
       .attr("x", 0)
       .attr("transform", `rotate(-90) translate(-${SQR_H/2},18)`)
       .classed("axisLb", true)
-      .text(ctx.sqr_y);
+      .text(ctx.reprVar[ctx.sqr_y]);
     
     addCircles();
 }
@@ -1056,7 +1076,7 @@ var createColorLegendSqr = function(svgElSqr){
     legendG.append("text")
         .attr("x", 0)
         .attr("y", valueRange4legend.length+25)
-        .text(ctx.sqr_c);
+        .text(ctx.reprVar[ctx.sqr_c]);
 }
 
 
@@ -1117,7 +1137,7 @@ var createCircleLegendSqr = function(svgElSqr){
         .attr("class","circleLegendItem")
         .attr('x', SQR_W - 80)
         .attr('y', 504)
-        .text(ctx.sqr_r);
+        .text(ctx.reprVar[ctx.sqr_r]);
 }
 
 

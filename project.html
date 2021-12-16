@@ -13,118 +13,102 @@
 svg {
     display: block;
 }
-
-.sphereBounds {
-    fill: #4e76b4;
-    stroke: #333;
-    stroke-width: 1px;
+h1, h2, h3, p, li {
+  font-family: 'Arial'
 }
+
 </style>
     </head>
-
     <body onload="createViz()">
         <div id="main">
-            <div style="float:right">
-                <div id='mapControl'>
-                    <p>MAP MENU</p>
-                    <form style="margin:10%" id='mapForm'>
-                        <select id="data4map" name="data4map" onchange="setMapFromHtml();">
-                          <option value="population">Population</option>
-                          <option value="pib">PIB par habitant</option>
-                          <option value="esperance">Éspérance de vie</option>
-                          <option value="natalite">Taux de natalité</option>
-                          <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
-                        </select>
-
-                        <select name="years" id="selectYear4map" onchange="setYearMap();">
-                          <option value="2021" class = "yearOption">YYYY</option>
-                        </select>
-
-                        </br>
-                        </br>
-                        <input type="button" value="Animer >" onclick="animerMap();" id="setAnimationBtn"/>
-                      
-
-                      </form>
-                      <p id="currentYearMap"></p>
-                  </div>
+          <div id="content" style=" margin: 0 15% 0 15%;">
+              <div id='Introduction' style='margin: 20px 3% 20px 3%'>
+                <h1 style='text-align:center; margin:3%'>Données démographiques des départements</h1>
+                <h2 style='text-align:center; font-size:1.1em;'>Project INF552 - Jérémie Dentan, Paul Théron</h2>
+                <div style='margin:1%'></div>
+                <p>Cette page web est le résultat d'un projet de visualisation de données dans le cadre du cours INF552 'Data Visualiezation' à l'École Polytechnique.</p>
+                <p>Pour ce projet, nous avons choisi de visualiser des données démographiques au sujet des départements français, ainsi que leur évolution à travers le temps. Nous avons en particulier choisi de représenter cinq variables:</p>
+                <ul>
+                  <li>La population, 'population'</li>
+                  <li>La PIB par habitant du département, 'pib'</li>
+                  <li>L'espérance de vie à la naissance, 'esperance'</li>
+                  <li>L'âge moyen des femmes à l'accouchement, 'accouchement'</li>
+                  <li>Le taux de natalité, défini comme le rapport entre le nombre de naissance et la population dans un département, 'natalite'</li>
+                </ul>
+                <p>Les graphiques qui suivent vous permettent de visualiser ces différentes variables, ainsi que de les animer à travers le temps. Un rapport plus détaillé discutant de nos choix de visualisation est également disponible.</p>
+                <p><strong>Disclaimer : </strong>cette page a uniquement été conçue pour des navigateurs en version bureau! L'affichage des graphiques n'est pas garanti en version mobile.</p>
+                </div>
+                <div style="margin:100px 0 0 0"></div>
+              </div>
 
 
-                  <div id='sqrControl'>
+              <div id = 'map' style='margin: 20px 3% 20px 3%'>
+                <div id = 'mapControl' style='margin: 20px 15% 20px 15%; border:solid; border-width: 1px; border-radius: 15px;'>
+                  <h3 style="text-align:center; font-size: 1em">Menu de contrôle de la carte</h3>
+                  <form style="margin: 0 80px 20px 80px" id='mapForm'>
+                    <select id="data4map" name="data4map" onchange="setMapFromHtml();">
+                      <option value="population">Population</option>
+                      <option value="pib">PIB par habitant</option>
+                      <option value="esperance">Éspérance de vie</option>
+                      <option value="natalite">Taux de natalité</option>
+                      <option value="accouchement">Âge moyen des femmes à l'accouchement</option>
+                    </select>
+                    <select name="years" id="selectYear4map" onchange="setYearMap();">
+                      <option value="2021" class = "yearOption">YYYY</option>
+                    </select>
                     </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    </br>
-                    <p>SQR MENU</p>
-                    <form style="margin:10%" id='sqrForm'>
-                        <select name="years4sqr" id="selectYear4sqr" onchange="setYearSqr();">
-                          <option value="2021" class = "yearOption">YYYY</option>
-                        </select>
-
-                        </br>
-                        </br>
-                        <input type="button" value="Animer >" onclick="animerSqr();" id="setAnimationSqrBtn"/>
-                      
-
-                      </form>
-                      <p id="currentYearSqr"></p>
-                  </div>
+                    <input type="button" value="Animer >" onclick="animerMap();" id="setAnimationBtn"/>
+                  </form>
+                  <p id="currentYearMap" style='text-align:center'></p>
+                </div>
+                <div id="mapSvgArea"></div>
+                <div style="margin:100px 0 0 0"></div>
+              </div>
 
 
-                  <div id='pltControl'>
+
+              <div id = 'sqr' style='margin: 20px 3% 20px 3%'>
+                <div id = 'sqrControl' style='margin: 20px 15% 20px 15%; border:solid; border-width: 1px; border-radius: 15px;'>
+                  <h3 style="text-align:center; font-size: 1em">Menu de contrôle de l'animation</h3>
+                  <form style="margin:0 80px 20px 80px" id='sqrForm'>
+                  <select name="years4sqr" id="selectYear4sqr" onchange="setYearSqr();">
+                    <option value="2021" class = "yearOption">YYYY</option>
+                  </select>
+                  <input type="button" value="Animer >" onclick="animerSqr();" id="setAnimationSqrBtn"/>
+                </form>
+
+                <p id="currentYearSqr" style="text-align:center"></p>
+                </div>
+                <div id="sqrSvgArea"></div>
+                <div style="margin:100px 0 0 0"></div>
+              </div>
+
+
+
+              <div id = 'plt' style='margin: 20px 15% 20px 15%'>
+                <div id = 'pltControl' style='margin: 20px 15% 20px 15%; border:solid; border-width: 1px; border-radius: 15px;'>
+                  <h3 style="text-align:center; font-size: 1em">Menu de contrôle du graphique</h3>
+                  <form style="margin:0 80px 20px 80px" id='pltForm'>
+                    <select name="dep4plt" id="dep4plt" onchange="setPltFromHtml();">
+                      <option value="ain" class = "dptOption">YYYY</option>
+                    </select>
                   </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  </br>
-                  <p>PLT MENU</p>
-                  <form style="margin:10%" id='pltForm'>
-                      <select name="dep4plt" id="dep4plt" onchange="setPltFromHtml();">
-                        <option value="ain" class = "dptOption">YYYY</option>
-                      </select>
-                    </br>
-                    </form>
-                    <p id="currentPlt"></p>
+                  </form>
+
+                  <p id="currentPlt"></p>
+                </div>
+                <div id="pltSvgArea"></div>
+                <div style="margin:100px 0 0 0"></div>
+              </div>
+
+
+
+
+
+
+              <div style="margin:5%"></div>  
             </div>
-        </div>
-
-    <div style="margin:5%"></div>
+      </div>
     </body>
 
 </html>
