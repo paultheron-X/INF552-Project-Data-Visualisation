@@ -686,7 +686,7 @@ var setMapLegendFromCtx = function(){
 
 var setMapLegendFromValue = function(value){
     d3.select("#currentYearMap")
-        .text("Year currently displayed on the map : " + value);
+        .text("Années représentée sur le graphique : " + value);
     d3.select("#selectYear4map")
         .property('value', value);
 }
@@ -740,7 +740,7 @@ var setSqrLegendFromCtx = function(){
 
 var setSqrLegendFromValue = function(value){
     d3.select("#currentYearSqr")
-        .text("Year currently displayed on the square : " + value);
+        .text("Année représentée sur le graphique : " + value);
     d3.select("#selectYear4sqr")
         .property('value', value);
 }
@@ -1367,30 +1367,32 @@ var setPltFromCtx = function(){
         var haveToDrawALine = false;
 
         for (let year=firstYear; year<firstYear + mCurrent; year++){
-            var d = ctx.departements['features'][ctx.toPlt]['properties'][current][year]
-            d3.select('#pointsGPlt')
-                .append('circle')
-                .attr('r',3)
-                .attr('cx', ctx.xScalePlt(year))
-                .attr('cy', ctx.yScalePlt[current](d))
-                .attr('fill', ctx.pltColor[current])
-                .append('title')
-                .text(current + ' : ' + d);
-
-            //draw the line
-            if (haveToDrawALine){
-                var d_old = ctx.departements['features'][ctx.toPlt]['properties'][current][year - 1]
+            var d = ctx.departements['features'][ctx.toPlt]['properties'][current][year];
+            if (d != '' && d != 'n.d'){
                 d3.select('#pointsGPlt')
-                    .append('line')
-                    .attr('x1', ctx.xScalePlt(year - 1))
-                    .attr('x2', ctx.xScalePlt(year))
-                    .attr('y1', ctx.yScalePlt[current](d_old))
-                    .attr('y2', ctx.yScalePlt[current](d))
-                    .style('stroke', ctx.pltColor[current])
-            }
+                    .append('circle')
+                    .attr('r',3)
+                    .attr('cx', ctx.xScalePlt(year))
+                    .attr('cy', ctx.yScalePlt[current](d))
+                    .attr('fill', ctx.pltColor[current])
+                    .append('title')
+                    .text(year.toString() + '\n' + ctx.reprVar[current] + ' : ' + d);
 
-            // update haveToDrawALine
-            haveToDrawALine = true;
+                //draw the line
+                if (haveToDrawALine){
+                    var d_old = ctx.departements['features'][ctx.toPlt]['properties'][current][year - 1]
+                    d3.select('#pointsGPlt')
+                        .append('line')
+                        .attr('x1', ctx.xScalePlt(year - 1))
+                        .attr('x2', ctx.xScalePlt(year))
+                        .attr('y1', ctx.yScalePlt[current](d_old))
+                        .attr('y2', ctx.yScalePlt[current](d))
+                        .style('stroke', ctx.pltColor[current])
+                }
+
+                // update haveToDrawALine
+                haveToDrawALine = true;
+            }
         }
     }
 }
